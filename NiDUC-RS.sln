@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiDUC-RS", "NiDUC-RS\NiDUC-RS.csproj", "{F91E5449-6AFF-4596-BB14-E93D1C376D9E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiDUC-RS.GaloisField", "NiDUC-RS.GaloisField\NiDUC-RS.GaloisField.csproj", "{4ED38410-F21C-4514-BB31-89891579CAF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{F91E5449-6AFF-4596-BB14-E93D1C376D9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F91E5449-6AFF-4596-BB14-E93D1C376D9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F91E5449-6AFF-4596-BB14-E93D1C376D9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4ED38410-F21C-4514-BB31-89891579CAF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ED38410-F21C-4514-BB31-89891579CAF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ED38410-F21C-4514-BB31-89891579CAF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ED38410-F21C-4514-BB31-89891579CAF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
