@@ -1,7 +1,7 @@
 ﻿namespace NiDUC_RS.GaloisField;
 
-public class GaloisField {
-    private readonly Dictionary<byte, byte> _field = [];
+public class GaloisFieldLookUpTable {
+    private readonly byte[] _field;
     private byte M { get; }
 
     /// <summary>
@@ -12,8 +12,14 @@ public class GaloisField {
     /// NOTE: if exp is null, 0 is returned
     /// </param>
     /// <returns></returns>
-    public (byte?, byte) GetGaloisWord(byte? exp = null) =>
-        exp is null ? (null, 0) : (exp, _field[(byte)(exp % (MathF.Pow(2, M) - 1))!]);
+    public (byte?, byte) GetByExponent(byte? exp = null) {
+        if (exp is null) return (null, 0);
+
+        return (0, 0);
+    }
+
+    // public (byte?, byte) GetByValue(byte value = 0) => 
+    //     _field.ContainsValue(value) ? ()
 
     /// <summary>
     /// Generates lookup table for GF(2^m). <br/>
@@ -27,28 +33,32 @@ public class GaloisField {
     /// Primal polynomial written as binary number,
     /// e.g. x^6 + x + 1 can be written as 1000011
     /// </param>
-    public GaloisField(byte m, byte primalPolynomial) {
+    public GaloisFieldLookUpTable(byte m, byte primalPolynomial) {
         // TODO: Get rid of magic values
         const byte minGfExp = 1;
         const byte maxGfExp = 16;
-        
+
         m = byte.Clamp(m, minGfExp, maxGfExp);
         M = m;
 
         var galoisElemCount = (int)MathF.Pow(2, M);
-        
-        for (var exp = 0; exp < galoisElemCount - 1; ++exp) {
-            if (_field.TryGetValue((byte)(exp - 1), out var alpha)) {
+        _field = new byte[galoisElemCount];
+
+        for (var exp = 0; exp < galoisElemCount - 2; ++exp) {
+            var alpha = (byte)0;
+
+            try {
+                alpha = _field[exp - 1];
                 alpha <<= 1;
-            } else {
+            } catch (IndexOutOfRangeException e) {
                 alpha += 1;
+            } finally {
+                if (alpha >= galoisElemCount) {
+                    alpha ^= primalPolynomial;
+                }
+
+                _field[exp] = alpha;
             }
-            
-            if (alpha >= galoisElemCount) {
-                alpha ^= primalPolynomial;
-            }
-            
-            _field.Add((byte)exp, alpha);
         }
     }
 }
