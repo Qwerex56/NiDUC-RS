@@ -12,14 +12,27 @@ public class GaloisFieldLookUpTable {
     /// NOTE: if exp is null, 0 is returned
     /// </param>
     /// <returns></returns>
-    public (byte?, byte) GetByExponent(byte? exp = null) {
+    public (int?, byte) GetByExponent(int? exp = null) {
         if (exp is null) return (null, 0);
 
-        return (0, 0);
+        exp %= _field.Length;
+        var value = _field[(int)exp];
+
+        return (exp, value);
     }
 
-    // public (byte?, byte) GetByValue(byte value = 0) => 
-    //     _field.ContainsValue(value) ? ()
+    public (byte?, byte) GetByValue(byte value = 0) {
+        if (value >= MathF.Pow(2, M))
+            throw new ArgumentException($"Trying to access not existing element of GF(2^{M})");
+
+        var exp = 0;
+
+        for (; exp < _field.Length; ++exp) {
+            if (value == _field[exp]) break;
+        }
+
+        return ((byte)exp, value);
+    }
 
     /// <summary>
     /// Generates lookup table for GF(2^m). <br/>
@@ -35,16 +48,16 @@ public class GaloisFieldLookUpTable {
     /// </param>
     public GaloisFieldLookUpTable(byte m, byte primalPolynomial) {
         // TODO: Get rid of magic values
-        const byte minGfExp = 1;
-        const byte maxGfExp = 16;
+        const byte minGfExp = 1; // Minimal number of exponents in GF2
+        const byte maxGfExp = 16; // Max byte sqrt
 
         m = byte.Clamp(m, minGfExp, maxGfExp);
         M = m;
 
         var galoisElemCount = (int)MathF.Pow(2, M);
-        _field = new byte[galoisElemCount];
+        _field = new byte[galoisElemCount - 1];
 
-        for (var exp = 0; exp < galoisElemCount - 2; ++exp) {
+        for (var exp = 0; exp < galoisElemCount - 1; ++exp) {
             var alpha = (byte)0;
 
             try {
@@ -60,5 +73,7 @@ public class GaloisFieldLookUpTable {
                 _field[exp] = alpha;
             }
         }
+        
+        Console.Write("");
     }
 }

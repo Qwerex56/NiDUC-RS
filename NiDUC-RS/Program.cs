@@ -2,6 +2,4 @@
 
 using NiDUC_RS.GaloisField;
 
-Console.WriteLine("Hello, World!");
-
-var foo = new GaloisField(6, 0b1000011);
+var foo = new GaloisFieldLookUpTable(4, 0b10011);
