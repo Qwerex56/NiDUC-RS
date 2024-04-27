@@ -1,4 +1,6 @@
 ﻿using NiDUC_RS.GaloisField;
+using NiDUC_RS.GaloisField.Gf2Polynomial;
+using NiDUC_RS.GaloisField.Gf2Tables;
 
 namespace NiDUC_RS.RS_Coder;
 
@@ -6,7 +8,7 @@ public class ReedSalomonCoder {
     /// <summary>
     /// Galois field parameter
     /// </summary>
-    private byte _gfDegree;
+    private readonly int _gfDegree;
     
     /// <summary>
     /// Error Code Correction Capability
@@ -14,6 +16,7 @@ public class ReedSalomonCoder {
     private readonly int _e3C;
 
     private Gf2Polynomial _generativePoly = new ();
+    public Gf2Polynomial GenerativePoly => _generativePoly;
     
     public ReedSalomonCoder(byte gfDegree, int e3C) {
         _gfDegree = gfDegree;
@@ -37,7 +40,6 @@ public class ReedSalomonCoder {
             genPoly *= partPoly;
         }
 
-        Console.WriteLine(genPoly);
         _generativePoly = genPoly;
     }
 }

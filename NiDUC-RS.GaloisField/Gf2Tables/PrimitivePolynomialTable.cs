@@ -1,12 +1,12 @@
-﻿namespace NiDUC_RS.GaloisField;
+﻿namespace NiDUC_RS.GaloisField.Gf2Tables;
 
 /// <summary>
 /// Table of first 16 primitive polynomials for GF(2^m)
 /// </summary>
 public static class PrimitivePolynomialTable {
-    private readonly static Dictionary<byte, int> PolynomialTable = new(
+    private readonly static Dictionary<int, int> PolynomialTable = new(
                                                                         new[] {
-                                                                            new KeyValuePair<byte, int>(1, 0b0011),
+                                                                            new KeyValuePair<int, int>(1, 0b0011),
                                                                             new(2, 0b0111),
                                                                             new(3, 0b1011),
                                                                             new(4, 0b0001_0011),
@@ -25,7 +25,7 @@ public static class PrimitivePolynomialTable {
                                                                         }
                                                                        );
 
-    public static int GetPrimitivePolynomial(byte degree) {
+    public static int GetPrimitivePolynomial(int degree) {
         if (!PolynomialTable.TryGetValue(degree, out var polynomial)) {
             throw new IndexOutOfRangeException("Non existing degree");
         }

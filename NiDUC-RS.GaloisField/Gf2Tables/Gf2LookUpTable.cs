@@ -1,8 +1,8 @@
-﻿namespace NiDUC_RS.GaloisField;
+﻿namespace NiDUC_RS.GaloisField.Gf2Tables;
 
 public class Gf2LookUpTable {
     private readonly int[] _field;
-    private byte GfDegree { get; }
+    private int GfDegree { get; }
     public int Gf2ElementsCount => _field.Length;
 
     /// <summary>
@@ -22,7 +22,7 @@ public class Gf2LookUpTable {
         return value;
     }
 
-    public (byte?, byte) GetByValue(byte value = 0) {
+    public (int?, int) GetByValue(int value = 0) {
         if (value >= MathF.Pow(2, GfDegree))
             throw new ArgumentException($"Trying to access not existing element of GF(2^{GfDegree})");
 
@@ -32,7 +32,7 @@ public class Gf2LookUpTable {
             if (value == _field[exp]) break;
         }
 
-        return ((byte)exp, value);
+        return (exp, value);
     }
 
     /// <summary>
@@ -47,11 +47,11 @@ public class Gf2LookUpTable {
     /// Primal polynomial written as binary number,
     /// e.g. x^6 + x + 1 can be written as 1000011
     /// </param>
-    public Gf2LookUpTable(byte gfDegree, int primitivePolynomial) {
-        const byte minGfExp = 1; // Minimal number of exponents in GF2
-        const byte maxGfExp = 16; // Max byte sqrt
+    public Gf2LookUpTable(int gfDegree, int primitivePolynomial) {
+        const int minGfExp = 1; // Minimal number of exponents in GF2
+        const int maxGfExp = 16; // Max byte sqrt
 
-        GfDegree = byte.Clamp(gfDegree, minGfExp, maxGfExp);
+        GfDegree = int.Clamp(gfDegree, minGfExp, maxGfExp);
 
         var galoisElemCount = (int)MathF.Pow(2, GfDegree);
         _field = new int[galoisElemCount - 1];

@@ -1,4 +1,4 @@
-﻿namespace NiDUC_RS.GaloisField;
+﻿namespace NiDUC_RS.GaloisField.Gf2Polynomial;
 
 public class Gf2Polynomial {
     private List<PolynomialWord> _factors;
