@@ -3,7 +3,17 @@
 // TODO: Add division and modulo
 public class Gf2Polynomial {
     private List<PolynomialWord> _factors;
+    public List<PolynomialWord> Factors => _factors;
 
+    public Gf2Polynomial GetWordAsPoly(int xExp) {
+        _factors = AddSameWords(_factors)._factors;
+        var word = from words in Factors
+                   where words.XExp == xExp
+                   select words;
+
+        return new Gf2Polynomial(word.ToList());
+    }
+    
     public Gf2Polynomial(List<PolynomialWord>? words = null) {
         if (words is null) {
             _factors = [];
@@ -22,7 +32,7 @@ public class Gf2Polynomial {
 
     public static Gf2Polynomial operator *(in Gf2Polynomial lhs, in Gf2Polynomial rhs) {
         var multipliedPoly = new Gf2Polynomial();
-
+        
         foreach (var lhsWord in lhs._factors) {
             foreach (var rhsWord in rhs._factors) {
                 var alpha = new Gf2Math(lhsWord.GfExp) * new Gf2Math(rhsWord.GfExp);
@@ -72,9 +82,18 @@ public class Gf2Polynomial {
     }
 
     public override string ToString() {
-        var polyString = _factors.Aggregate(string.Empty, 
-                                            (current, word) => current + $"a^{word.GfExp}x^{word.XExp} + ");
+        var polyString = string.Empty;
 
-        return polyString.Remove(polyString.Length - 3);
+        foreach (var word in Factors) {
+            if (word.GfExp != 0) {
+                polyString += $"a^{word.GfExp}";
+            }
+
+            if (word.XExp != 0) {
+                polyString += $"x^{word.XExp} + ";
+            }
+        }
+
+        return polyString.Remove(polyString.Length);
     }
 }

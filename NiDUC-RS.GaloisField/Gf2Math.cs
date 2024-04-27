@@ -18,8 +18,8 @@ public class Gf2Math(int? exponent) {
             return new Gf2Math(null);
         }
 
-        var (_, elementA) = _galoisField.GetByExponent(exp1._exponent);
-        var (_, elementB) = _galoisField.GetByExponent(exp2._exponent);
+        var elementA = _galoisField.GetValueByExponent(exp1._exponent);
+        var elementB = _galoisField.GetValueByExponent(exp2._exponent);
 
         var result = (byte)(elementA ^ elementB);
 

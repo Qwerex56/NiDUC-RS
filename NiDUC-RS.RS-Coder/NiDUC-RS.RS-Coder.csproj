@@ -1,15 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
-        <RootNamespace>NiDUC_RS</RootNamespace>
+        <RootNamespace>NiDUC_RS.RS_Coder</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\NiDUC-RS.RS-Coder\NiDUC-RS.RS-Coder.csproj" />
+      <ProjectReference Include="..\NiDUC-RS.GaloisField\NiDUC-RS.GaloisField.csproj" />
     </ItemGroup>
 
 </Project>
