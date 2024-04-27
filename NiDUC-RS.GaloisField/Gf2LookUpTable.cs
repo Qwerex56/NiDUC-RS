@@ -1,8 +1,9 @@
 ﻿namespace NiDUC_RS.GaloisField;
 
-public class GaloisFieldLookUpTable {
+public class Gf2LookUpTable {
     private readonly byte[] _field;
-    private byte M { get; }
+    public byte M { get; }
+    public int Gf2ElementsCount => _field.Length;
 
     /// <summary>
     /// Returns nth exponent of alpha in Galois field
@@ -42,12 +43,11 @@ public class GaloisFieldLookUpTable {
     /// Elements in GF(2^m),
     /// m is clamped to value between [1, 16]
     /// </param>
-    /// <param name="primalPolynomial">
+    /// <param name="primitivePolynomial">
     /// Primal polynomial written as binary number,
     /// e.g. x^6 + x + 1 can be written as 1000011
     /// </param>
-    public GaloisFieldLookUpTable(byte m, byte primalPolynomial) {
-        // TODO: Get rid of magic values
+    public Gf2LookUpTable(byte m, byte primitivePolynomial) {
         const byte minGfExp = 1; // Minimal number of exponents in GF2
         const byte maxGfExp = 16; // Max byte sqrt
 
@@ -67,13 +67,11 @@ public class GaloisFieldLookUpTable {
                 alpha += 1;
             } finally {
                 if (alpha >= galoisElemCount) {
-                    alpha ^= primalPolynomial;
+                    alpha ^= primitivePolynomial;
                 }
 
                 _field[exp] = alpha;
             }
         }
-        
-        Console.Write("");
     }
 }
