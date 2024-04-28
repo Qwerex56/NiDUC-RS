@@ -1,13 +1,14 @@
-﻿namespace NiDUC_RS.GaloisField;
+﻿using NiDUC_RS.GaloisField.Gf2Tables;
+
+namespace NiDUC_RS.GaloisField;
 
 public class Gf2Math(int? exponent) {
     private static Gf2LookUpTable? _galoisField;
     public static Gf2LookUpTable SetGf2 {
         set => _galoisField = value;
     }
-    
-    private readonly int? _exponent = exponent;
-    public int? Exponent => _exponent;
+
+    public int? Exponent { get; } = exponent;
 
     public static Gf2Math operator +(Gf2Math exp1, Gf2Math exp2) {
         if (_galoisField is null) {
@@ -18,10 +19,10 @@ public class Gf2Math(int? exponent) {
             return new Gf2Math(null);
         }
 
-        var (_, elementA) = _galoisField.GetByExponent(exp1._exponent);
-        var (_, elementB) = _galoisField.GetByExponent(exp2._exponent);
+        var elementA = _galoisField.GetValueByExponent(exp1.Exponent);
+        var elementB = _galoisField.GetValueByExponent(exp2.Exponent);
 
-        var result = (byte)(elementA ^ elementB);
+        var result = elementA ^ elementB;
 
         return new Gf2Math(_galoisField.GetByValue(result).Item1);
     }
@@ -39,8 +40,8 @@ public class Gf2Math(int? exponent) {
             throw new NullReferenceException();
         }
 
-        var exp = lhs._exponent + rhs._exponent;
-        if (lhs._exponent is null || rhs._exponent is null) {
+        var exp = lhs.Exponent + rhs.Exponent;
+        if (lhs.Exponent is null || rhs.Exponent is null) {
             exp = null;
         }
 
@@ -52,15 +53,15 @@ public class Gf2Math(int? exponent) {
             throw new NullReferenceException();
         }
 
-        if (rhs._exponent is null) {
+        if (rhs.Exponent is null) {
             throw new DivideByZeroException();
         }
 
-        if (lhs._exponent < rhs._exponent) {
+        if (lhs.Exponent < rhs.Exponent) {
             return lhs;
         }
 
-        return lhs * new Gf2Math(-rhs._exponent);
+        return lhs * new Gf2Math(-rhs.Exponent);
     }
 
     public static Gf2Math operator %(Gf2Math lhs, Gf2Math rhs) {

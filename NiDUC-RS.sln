@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiDUC-RS", "NiDUC-RS\NiDUC-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiDUC-RS.GaloisField", "NiDUC-RS.GaloisField\NiDUC-RS.GaloisField.csproj", "{4ED38410-F21C-4514-BB31-89891579CAF2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiDUC-RS.RS-Coder", "NiDUC-RS.RS-Coder\NiDUC-RS.RS-Coder.csproj", "{DDDAA6EB-0496-411D-969C-BA6FB7CC62D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{4ED38410-F21C-4514-BB31-89891579CAF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4ED38410-F21C-4514-BB31-89891579CAF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4ED38410-F21C-4514-BB31-89891579CAF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDDAA6EB-0496-411D-969C-BA6FB7CC62D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDDAA6EB-0496-411D-969C-BA6FB7CC62D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDDAA6EB-0496-411D-969C-BA6FB7CC62D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDDAA6EB-0496-411D-969C-BA6FB7CC62D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
