@@ -29,6 +29,23 @@ public class ReedSalomonCoder {
         GenerateGenPoly();
     }
 
+    public Gf2Polynomial EncodeMessage(Gf2Polynomial message) {
+        message *= new Gf2Polynomial([new(0, _generativePoly.GetPolynomialDegree())]);
+        var remainder = message % GenerativePoly;
+        var codeWord = message + remainder;
+
+        // Check codeWord remainder
+        // var cwMod = codeWord % GenerativePoly;
+        // Console.WriteLine(cwMod);
+
+        // Add Error to codeWord
+        // codeWord += new Gf2Polynomial([new(1, 6)]);
+        // cwMod = codeWord % GenerativePoly;
+        // Console.WriteLine(cwMod);
+        
+        return codeWord;
+    }
+
     private void GenerateGenPoly() {
         var genPoly = new Gf2Polynomial([new PolynomialWord(0, 1),
                                         new PolynomialWord(1, 0)]);
