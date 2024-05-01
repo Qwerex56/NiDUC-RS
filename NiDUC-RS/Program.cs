@@ -1,4 +1,4 @@
-﻿using NiDUC_RS.GaloisField.Gf2Polynomial;
+using NiDUC_RS.GaloisField.Gf2Polynomial;
 using NiDUC_RS.RS_Coder;
 
 var reedSalomonCoder = new ReedSalomonCoder(3, 1);
