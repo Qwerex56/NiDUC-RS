@@ -22,17 +22,21 @@ public class Gf2LookUpTable {
         return value;
     }
 
-    public (int?, int) GetByValue(int value = 0) {
+    public int? GetByValue(int value = 0) {
         if (value >= MathF.Pow(2, GfDegree))
             throw new ArgumentException($"Trying to access not existing element of GF(2^{GfDegree})");
 
+        if (value == 0) {
+            return null;
+        }
+        
         var exp = 0;
 
         for (; exp < _field.Length; ++exp) {
             if (value == _field[exp]) break;
         }
 
-        return (exp, value);
+        return exp;
     }
 
     /// <summary>
