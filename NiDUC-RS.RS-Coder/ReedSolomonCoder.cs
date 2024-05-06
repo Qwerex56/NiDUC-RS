@@ -1,6 +1,7 @@
 ﻿using NiDUC_RS.GaloisField;
 using NiDUC_RS.GaloisField.Gf2Polynomial;
 using NiDUC_RS.GaloisField.Gf2Tables;
+using NiDUC_RS.RS_Coder.RsFormatters;
 
 namespace NiDUC_RS.RS_Coder;
 
@@ -15,44 +16,79 @@ public class ReedSolomonCoder {
     /// </summary>
     private readonly int _e3C;
 
-    private Gf2Polynomial _generativePoly = new();
-    public Gf2Polynomial GenerativePoly => _generativePoly;
+    private Gf2Polynomial GenerativePoly { get; set; } = new();
+    private Packet.PacketBuilder _packetBuilder;
+    private RsFileFormatter _rsFileFormatter;
 
+    private int BlockLength => (int)(Math.Pow(2, _gfDegree) - 1);
+    private int InformationLength => BlockLength - 2 * _e3C;
+    // ReSharper disable once ConvertToAutoPropertyWhenPossible
+    private int WordSize => _gfDegree;
+    
     public ReedSolomonCoder(byte gfDegree, int e3C) {
         _gfDegree = gfDegree;
         _e3C = e3C;
 
-        var primitivePoly = PrimitivePolynomialTable.GetPrimitivePolynomial(_gfDegree);
+        var primePoly = PrimitivePolynomialTable.GetPrimitivePolynomial(_gfDegree);
 
         // Make sure that we have GF2
-        Gf2Math.SetGf2 = new Gf2LookUpTable(_gfDegree, primitivePoly);
+        Gf2Math.SetGf2 = new(_gfDegree, primePoly);
         GenerateGenPoly();
+
+        _packetBuilder = new(InformationLength * WordSize);
+        // _rsFileFormatter = new();
     }
 
-    public string EncodeMessage(string message) {
+    public void SendFile(string filePath) {
+        
+    }
+
+    public void SendString(string message) {
+        
+    }
+
+    public string ReceiveFile() {
+        throw new NotImplementedException();
+    }
+
+    public string ReceiveString() {
+        throw new NotImplementedException();
+    }
+
+    private string EncodeMessage(string message) {
         var polyMessage = StringToPolynomial(message);
 
-        polyMessage *= new Gf2Polynomial([new(0, _generativePoly.GetPolynomialDegree())]);
+        polyMessage *= new Gf2Polynomial([new(0, GenerativePoly.GetPolynomialDegree())]);
         var remainder = polyMessage % GenerativePoly;
         var codeWord = polyMessage + remainder;
 
         return codeWord.ToBinaryString(_gfDegree);
     }
 
+    private Gf2Polynomial DecodeMessage() {
+        throw new NotImplementedException();
+    }
+
+    private void SendBadPacketRequest(int packetId) {
+        throw new NotImplementedException();
+    }
+
     private Gf2Polynomial StringToPolynomial(string message) {
+        const int @base = 2;
+        
         var wordCount = message.Length / _gfDegree + (message.Length % _gfDegree != 0 ? 1 : 0);
         var elements = new byte[wordCount];
-
-        for (var i = wordCount - 1; i >= 0; --i) {
+        
+        for (var id = wordCount - 1; id >= 0; --id) {
             string value;
             try {
-                value = message.Substring(i * _gfDegree, _gfDegree);
+                value = message.Substring(id * _gfDegree, _gfDegree);
             }
             catch (ArgumentOutOfRangeException) {
-                value = message.Substring(i * _gfDegree);
+                value = message[(id * _gfDegree)..];
             }
             
-            elements[i] = Convert.ToByte(value, 2);
+            elements[id] = Convert.ToByte(value, @base);
         }
 
         var exponent = elements.Length - 1;
@@ -60,7 +96,7 @@ public class ReedSolomonCoder {
         
         foreach (var b in elements) {
             var alpha = Gf2Math.GaloisField?.GetByValue(b);
-            poly.Factors.Add(new (alpha, exponent));
+            poly += new Gf2Polynomial([new (alpha, exponent)]);
             
             --exponent;
         }
@@ -70,8 +106,8 @@ public class ReedSolomonCoder {
 
     private void GenerateGenPoly() {
         var genPoly = new Gf2Polynomial([
-            new PolynomialWord(0, 1),
-            new PolynomialWord(1, 0)
+            new (0, 1),
+            new (1, 0)
         ]);
         var x = new PolynomialWord(0, 1);
 
@@ -81,6 +117,6 @@ public class ReedSolomonCoder {
             genPoly *= partPoly;
         }
 
-        _generativePoly = genPoly;
+        GenerativePoly = genPoly;
     }
 }
