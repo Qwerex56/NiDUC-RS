@@ -1,13 +1,13 @@
-using System.Collections;
-using NiDUC_RS.GaloisField.Gf2Polynomial;
 using NiDUC_RS.RS_Coder;
-using NiDUC_RS.RS_Coder.RsFormatters;
 
-var reedSalomonCoder = new ReedSolomonCoder(6, 1);
-var msg = "01001000";
+var reedSalomonCoder = new ReedSolomonCoder(3, 1);
 
-// var codedMsg = reedSalomonCoder.EncodeMessage(msg);
-// Console.WriteLine(codedMsg);
+const string msg = "h";
+const string encodedMsg = "000000001101100010"; // Error at idx = 4  0 -> 1, original string:  001101000010110
+const string mochnacki = "001010001010001110111"; // z Mochnackiego p. 2.8.2. 
 
-// var ff = new RsFileFormatter(@"D:\\dev\\NiDUC-Examples\\HelloWorld.txt");
-// ff.ToBinFile();
+reedSalomonCoder.SendString(msg);
+Console.WriteLine(reedSalomonCoder.ReceiveString(encodedMsg));
+
+// 001111001010110 random value
+// 001101000010110

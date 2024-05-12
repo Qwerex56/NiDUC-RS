@@ -18,13 +18,13 @@ public class ReedSolomonCoder {
 
     private Gf2Polynomial GenerativePoly { get; set; } = new();
     private Packet.PacketBuilder _packetBuilder;
-    private RsFileFormatter _rsFileFormatter;
 
     private int BlockLength => (int)(Math.Pow(2, _gfDegree) - 1);
     private int InformationLength => BlockLength - 2 * _e3C;
+
     // ReSharper disable once ConvertToAutoPropertyWhenPossible
     private int WordSize => _gfDegree;
-    
+
     public ReedSolomonCoder(byte gfDegree, int e3C) {
         _gfDegree = gfDegree;
         _e3C = e3C;
@@ -36,23 +36,33 @@ public class ReedSolomonCoder {
         GenerateGenPoly();
 
         _packetBuilder = new(InformationLength * WordSize);
-        // _rsFileFormatter = new();
     }
 
     public void SendFile(string filePath) {
-        
+        throw new NotImplementedException();
     }
 
     public void SendString(string message) {
-        
+        var stringFormatter = new RsStringFormatter(message);
+        var counter = 0;
+
+        while (stringFormatter.CanRead()) {
+            var bits = stringFormatter.ReadBits(InformationLength * WordSize);
+            var encodedMessage = EncodeMessage(bits);
+            Console.Write($"Packet {counter++}: ");
+            Console.WriteLine(encodedMessage);
+        }
+
+        Console.WriteLine("All packets has been sent");
     }
 
     public string ReceiveFile() {
         throw new NotImplementedException();
     }
 
-    public string ReceiveString() {
-        throw new NotImplementedException();
+    public string ReceiveString(string bitStringPacket) {
+        // TODO: i had something on mind but never mind
+        return SimplifiedDecodeMessage(bitStringPacket);
     }
 
     private string EncodeMessage(string message) {
@@ -65,8 +75,32 @@ public class ReedSolomonCoder {
         return codeWord.ToBinaryString(_gfDegree);
     }
 
-    private Gf2Polynomial DecodeMessage() {
+    private Gf2Polynomial DecodeMessage(string bitStringMessage) {
         throw new NotImplementedException();
+    }
+
+    private string SimplifiedDecodeMessage(string bitStringMessage) {
+        for (var i = 0; i < InformationLength; ++i) {
+            var polyMessage = StringToPolynomial(bitStringMessage);
+            var syndrome = (polyMessage % GenerativePoly).ToBinaryString(WordSize);
+            var syndromePop = syndrome.Count(ch => ch == '1');
+
+            if (syndromePop <= _e3C) {
+                polyMessage += StringToPolynomial(syndrome);
+                bitStringMessage = polyMessage.ToBinaryString(WordSize);
+
+                var shiftedString = bitStringMessage[..(i * WordSize)];
+                bitStringMessage = bitStringMessage[(i * WordSize)..];
+
+                return bitStringMessage + shiftedString;
+            }
+
+            var last = bitStringMessage[^WordSize..];
+            bitStringMessage = bitStringMessage[..^WordSize];
+            bitStringMessage = bitStringMessage.Insert(0, last);
+        }
+
+        throw new("Cannot decode message");
     }
 
     private void SendBadPacketRequest(int packetId) {
@@ -75,30 +109,34 @@ public class ReedSolomonCoder {
 
     private Gf2Polynomial StringToPolynomial(string message) {
         const int @base = 2;
-        
-        var wordCount = message.Length / _gfDegree + (message.Length % _gfDegree != 0 ? 1 : 0);
-        var elements = new byte[wordCount];
-        
-        for (var id = wordCount - 1; id >= 0; --id) {
-            string value;
-            try {
-                value = message.Substring(id * _gfDegree, _gfDegree);
-            }
-            catch (ArgumentOutOfRangeException) {
-                value = message[(id * _gfDegree)..];
-            }
-            
-            elements[id] = Convert.ToByte(value, @base);
+
+        while (message.Length % WordSize != 0) {
+            message = "0" + message;
         }
 
-        var exponent = elements.Length - 1;
+        var wordCount = message.Length / _gfDegree;
+        var elements = new byte[wordCount];
+
+        for (var id = 1; id <= wordCount; ++id) {
+            string value;
+
+            try {
+                value = message.Substring(message.Length - id * _gfDegree, _gfDegree);
+            } catch (ArgumentOutOfRangeException) {
+                value = message[(id * _gfDegree)..];
+            }
+
+            elements[id - 1] = Convert.ToByte(value, @base);
+        }
+
+        var exponent = 0;
         var poly = new Gf2Polynomial();
-        
+
         foreach (var b in elements) {
             var alpha = Gf2Math.GaloisField?.GetByValue(b);
-            poly += new Gf2Polynomial([new (alpha, exponent)]);
-            
-            --exponent;
+            poly += new Gf2Polynomial([new(alpha, exponent)]);
+
+            ++exponent;
         }
 
         return poly;
@@ -106,9 +144,9 @@ public class ReedSolomonCoder {
 
     private void GenerateGenPoly() {
         var genPoly = new Gf2Polynomial([
-            new (0, 1),
-            new (1, 0)
-        ]);
+                                            new(0, 1),
+                                            new(1, 0)
+                                        ]);
         var x = new PolynomialWord(0, 1);
 
         for (var exp = 2; exp <= 2 * _e3C; ++exp) {

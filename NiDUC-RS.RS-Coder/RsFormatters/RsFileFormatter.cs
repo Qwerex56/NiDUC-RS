@@ -3,8 +3,6 @@
 namespace NiDUC_RS.RS_Coder.RsFormatters;
 
 public class RsFileFormatter : IRsFormatter {
-    public bool CanRead => _cursor < _binaryData.Length;
-    
     private readonly string _filePath;
     private readonly string _binaryData;
     private int _cursor;
@@ -24,6 +22,8 @@ public class RsFileFormatter : IRsFormatter {
         fs.ReadExactly(buff, 0, fsLen);
         _binaryData = IRsFormatter.ParseToBinaryString(buff);
     }
+
+    public bool CanRead() => _cursor < _binaryData.Length;
 
     public string ReadBits(int count) {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(_cursor, _binaryData.Length);

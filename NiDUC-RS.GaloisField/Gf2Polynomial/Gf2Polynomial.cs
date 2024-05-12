@@ -85,7 +85,7 @@ public class Gf2Polynomial {
         var quotient = lhs / rhs;
         var remainder = quotient * rhs + lhs;
 
-        remainder.Factors.RemoveAll(word => word.GfExp is null);
+        // remainder.Factors.RemoveAll(word => word.GfExp is null);
         return remainder;
     }
 
@@ -123,7 +123,7 @@ public class Gf2Polynomial {
         var binaryString = string.Empty;
 
         foreach (var t in Factors) {
-            var gfVal = t.GfExp ?? 0;
+            var gfVal = Gf2Math.GaloisField?.GetValueByExponent(t.GfExp)?? 0;
             var word = Convert.ToString(gfVal, 2).PadLeft(wordSize, '0');
             binaryString += word;
         }

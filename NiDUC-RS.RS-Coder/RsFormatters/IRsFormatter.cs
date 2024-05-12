@@ -3,6 +3,7 @@
 namespace NiDUC_RS.RS_Coder.RsFormatters;
 
 public interface IRsFormatter {
+    bool CanRead();
     string ReadBits(int count);
     
     string ReadBitsAt(int startIndex, int count);

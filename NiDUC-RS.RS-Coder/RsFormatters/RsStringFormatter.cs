@@ -35,6 +35,8 @@ public class RsStringFormatter : IRsFormatter {
         return subString;
     }
 
+    public bool CanRead() => _cursor < _binaryData.Length;
+    
     public string ReadBitsAt(int startIndex, int count) {
         ArgumentOutOfRangeException.ThrowIfNegative(startIndex);
         ArgumentOutOfRangeException.ThrowIfNegative(count);
