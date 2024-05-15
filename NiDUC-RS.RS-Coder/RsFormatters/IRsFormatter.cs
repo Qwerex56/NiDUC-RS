@@ -18,6 +18,7 @@ public interface IRsFormatter {
         const int numBase = 2;
         
         var sb = new StringBuilder();
+        // 1 - 0b1 => 0000 0001
 
         foreach (var b in data) {
             var byteString = Convert.ToString(b, numBase)

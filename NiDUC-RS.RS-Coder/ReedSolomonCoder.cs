@@ -68,11 +68,11 @@ public class ReedSolomonCoder {
     private string EncodeMessage(string message) {
         var polyMessage = StringToPolynomial(message);
 
-        polyMessage *= new Gf2Polynomial([new(0, GenerativePoly.GetPolynomialDegree())]);
+        polyMessage *= new Gf2Polynomial([new(0, GenerativePoly.GetPolynomialDegree)]);
         var remainder = polyMessage % GenerativePoly;
         var codeWord = polyMessage + remainder;
 
-        return codeWord.ToBinaryString(_gfDegree);
+        return codeWord.ToBinaryString();
     }
 
     private Gf2Polynomial DecodeMessage(string bitStringMessage) {
@@ -82,12 +82,12 @@ public class ReedSolomonCoder {
     private string SimplifiedDecodeMessage(string bitStringMessage) {
         for (var i = 0; i < InformationLength; ++i) {
             var polyMessage = StringToPolynomial(bitStringMessage);
-            var syndrome = (polyMessage % GenerativePoly).ToBinaryString(WordSize);
+            var syndrome = (polyMessage % GenerativePoly).ToBinaryString();
             var syndromePop = syndrome.Count(ch => ch == '1');
 
             if (syndromePop <= _e3C) {
                 polyMessage += StringToPolynomial(syndrome);
-                bitStringMessage = polyMessage.ToBinaryString(WordSize);
+                bitStringMessage = polyMessage.ToBinaryString();
 
                 var shiftedString = bitStringMessage[..(i * WordSize)];
                 bitStringMessage = bitStringMessage[(i * WordSize)..];
