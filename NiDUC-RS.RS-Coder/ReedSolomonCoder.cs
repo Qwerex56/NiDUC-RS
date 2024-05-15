@@ -107,6 +107,7 @@ public class ReedSolomonCoder {
         throw new NotImplementedException();
     }
 
+    [Obsolete($"This will be deleted in near future, use {nameof(Gf2Polynomial.FromBinaryString)} instead.")]
     private Gf2Polynomial StringToPolynomial(string message) {
         const int @base = 2;
 
