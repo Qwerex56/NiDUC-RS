@@ -3,15 +3,17 @@
 namespace NiDUC_RS.GaloisField;
 
 public class Gf2Math(int? exponent) {
-    private static Gf2LookUpTable? _galoisField;
     public static Gf2LookUpTable SetGf2 {
-        set => _galoisField = value;
+        set => GaloisField = value;
     }
+
+    public static Gf2LookUpTable GaloisField { get; private set; } =
+        new(6, PrimitivePolynomialTable.GetPrimitivePolynomial(6));
 
     public int? Exponent { get; } = exponent;
 
     public static Gf2Math operator +(Gf2Math exp1, Gf2Math exp2) {
-        if (_galoisField is null) {
+        if (GaloisField is null) {
             throw new NullReferenceException();
         }
 
@@ -19,16 +21,16 @@ public class Gf2Math(int? exponent) {
             return new Gf2Math(null);
         }
 
-        var elementA = _galoisField.GetValueByExponent(exp1.Exponent);
-        var elementB = _galoisField.GetValueByExponent(exp2.Exponent);
+        var elementA = GaloisField.GetValueByExponent(exp1.Exponent);
+        var elementB = GaloisField.GetValueByExponent(exp2.Exponent);
 
         var result = elementA ^ elementB;
 
-        return new Gf2Math(_galoisField.GetByValue(result).Item1);
+        return new Gf2Math(GaloisField.GetByValue(result));
     }
 
     public static Gf2Math operator -(Gf2Math lhs, Gf2Math rhs) {
-        if (_galoisField is null) {
+        if (GaloisField is null) {
             throw new NullReferenceException();
         }
 
@@ -36,20 +38,21 @@ public class Gf2Math(int? exponent) {
     }
 
     public static Gf2Math operator *(Gf2Math lhs, Gf2Math rhs) {
-        if (_galoisField is null) {
+        if (GaloisField is null) {
             throw new NullReferenceException();
         }
 
         var exp = lhs.Exponent + rhs.Exponent;
+
         if (lhs.Exponent is null || rhs.Exponent is null) {
             exp = null;
         }
 
-        return new Gf2Math(exp % _galoisField.Gf2ElementsCount);
+        return new (exp % (GaloisField.Gf2MaxExponent + 1));
     }
 
     public static Gf2Math operator /(Gf2Math lhs, Gf2Math rhs) {
-        if (_galoisField is null) {
+        if (GaloisField is null) {
             throw new NullReferenceException();
         }
 
@@ -65,7 +68,7 @@ public class Gf2Math(int? exponent) {
     }
 
     public static Gf2Math operator %(Gf2Math lhs, Gf2Math rhs) {
-        if (_galoisField is null) {
+        if (GaloisField is null) {
             throw new NullReferenceException();
         }
 
@@ -74,5 +77,4 @@ public class Gf2Math(int? exponent) {
 
         return modulo;
     }
-    
 }

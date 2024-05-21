@@ -2,8 +2,11 @@
 
 public class Gf2LookUpTable {
     private readonly int[] _field;
-    private int GfDegree { get; }
-    public int Gf2ElementsCount => _field.Length;
+    public int GfDegree { get; }
+    public int MaxGf2Value => _field.Max();
+    public int Gf2ElementsCount => _field.Length + 1;
+    public int Gf2NonZeroElementsCount => _field.Length;
+    public int Gf2MaxExponent => _field.Length - 1;
 
     /// <summary>
     /// Returns nth exponent of alpha in Galois field
@@ -22,9 +25,17 @@ public class Gf2LookUpTable {
         return value;
     }
 
-    public (int?, int) GetByValue(int value = 0) {
-        if (value >= MathF.Pow(2, GfDegree))
-            throw new ArgumentException($"Trying to access not existing element of GF(2^{GfDegree})");
+    public int? GetByValue(int value = 0) {
+        ArgumentOutOfRangeException
+            .ThrowIfGreaterThan(value, 
+                                MaxGf2Value,
+                                $"Element with value {value} is not present in GF2^{GfDegree}");
+        ArgumentOutOfRangeException
+            .ThrowIfNegative(value, $"Element with value {value} is not present in GF2^{GfDegree}");
+        
+        if (value == 0) {
+            return null;
+        }
 
         var exp = 0;
 
@@ -32,7 +43,7 @@ public class Gf2LookUpTable {
             if (value == _field[exp]) break;
         }
 
-        return (exp, value);
+        return exp;
     }
 
     /// <summary>
