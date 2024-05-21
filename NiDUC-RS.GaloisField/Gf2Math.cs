@@ -7,7 +7,8 @@ public class Gf2Math(int? exponent) {
         set => GaloisField = value;
     }
 
-    public static Gf2LookUpTable? GaloisField { get; private set; }
+    public static Gf2LookUpTable GaloisField { get; private set; } =
+        new(6, PrimitivePolynomialTable.GetPrimitivePolynomial(6));
 
     public int? Exponent { get; } = exponent;
 
@@ -42,11 +43,12 @@ public class Gf2Math(int? exponent) {
         }
 
         var exp = lhs.Exponent + rhs.Exponent;
+
         if (lhs.Exponent is null || rhs.Exponent is null) {
             exp = null;
         }
 
-        return new Gf2Math(exp % GaloisField.Gf2ElementsCount);
+        return new (exp % (GaloisField.Gf2MaxExponent + 1));
     }
 
     public static Gf2Math operator /(Gf2Math lhs, Gf2Math rhs) {
@@ -75,5 +77,4 @@ public class Gf2Math(int? exponent) {
 
         return modulo;
     }
-    
 }

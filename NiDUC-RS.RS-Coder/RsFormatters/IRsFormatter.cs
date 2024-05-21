@@ -3,6 +3,7 @@
 namespace NiDUC_RS.RS_Coder.RsFormatters;
 
 public interface IRsFormatter {
+    bool CanRead();
     string ReadBits(int count);
     
     string ReadBitsAt(int startIndex, int count);
@@ -17,6 +18,7 @@ public interface IRsFormatter {
         const int numBase = 2;
         
         var sb = new StringBuilder();
+        // 1 - 0b1 => 0000 0001
 
         foreach (var b in data) {
             var byteString = Convert.ToString(b, numBase)

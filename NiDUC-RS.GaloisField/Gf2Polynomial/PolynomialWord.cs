@@ -1,7 +1,7 @@
 ﻿namespace NiDUC_RS.GaloisField.Gf2Polynomial;
 
 public record PolynomialWord(int? GfExp, int XExp) {
-    public int XExp { get; } = XExp;
+    public int XExp { get; set; } = XExp;
 
     public static PolynomialWord operator +(PolynomialWord lhs, PolynomialWord rhs) {
         if (lhs.XExp != rhs.XExp) throw new ArgumentException("Different exponents");

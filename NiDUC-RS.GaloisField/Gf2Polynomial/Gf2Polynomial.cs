@@ -1,29 +1,107 @@
 ﻿namespace NiDUC_RS.GaloisField.Gf2Polynomial;
 
 public class Gf2Polynomial {
-    public List<PolynomialWord> Factors { get; private set; }
+    private List<PolynomialWord> Factors { get; set; } = [];
 
-    public Gf2Polynomial GetWordAsPoly(int xExp) {
-        Factors = AddSameWords(Factors).Factors;
-        var word = from words in Factors
-                   where words.XExp == xExp
-                   select words;
-
-        return new Gf2Polynomial(word.ToList());
+    /// <summary>
+    /// Creates empty polynomial.
+    /// Use with math operations for place-holding values.
+    /// </summary>
+    public static Gf2Polynomial CreateEmpty => new() { Factors = [] };
+    
+    /// <summary>
+    /// Creates GF2 polynomial filled with zeros.
+    /// If Galois field is null, empty polynomial is created instead.
+    /// </summary>
+    public Gf2Polynomial() {
+        PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
+        Factors = Factors.OrderByDescending(word => word.XExp).ToList();
     }
 
+    /// <summary>
+    /// Creates polynomial from words, free exponents of 'x' fills with zeroes.
+    /// </summary>
+    /// <param name="words"></param>
     public Gf2Polynomial(List<PolynomialWord>? words = null) {
-        if (words is null) {
-            Factors = [];
+        Factors = AddSameWords(words).Factors;
+        PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
+    }
 
-            return;
+    /// <summary>
+    /// Casts polynomial word to polynomial and fills other 'x' exponents with zeroes.
+    /// </summary>
+    /// <param name="word"></param>
+    public Gf2Polynomial(PolynomialWord? word = null) {
+        Factors.Add(word ?? new(null, 0));
+        PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
+    }
+
+    /// <summary>
+    /// Finds polynomial degree with non zero factor.
+    /// </summary>
+    public int GetPolynomialDegree => Factors.Where(word => word.GfExp is not null).Max(word => word.XExp);
+
+    /// <summary>
+    /// Counts all bits which value is equals 1.
+    /// Mainly used to calculate syndrome weight.
+    /// </summary>
+    public int Population => Factors.Sum(word => int.PopCount(word.GfExp ?? 0));
+
+    /// <summary>
+    /// Used to perform left cycle shifts on GF2 polynomials/vectors.
+    /// Note that GF2 polynomial is not aware of max 'x' power.
+    /// </summary>
+    /// <param name="shifts">count of shifts.</param>
+    /// <param name="maxXPow">x exponent cap.</param>
+    /// <returns>itself</returns>
+    public Gf2Polynomial LeftCycleShift(int shifts, int maxXPow) {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxXPow, 1);
+
+        foreach (var word in Factors.Where(word => (word.XExp += shifts) > maxXPow)) {
+            word.XExp -= maxXPow;
         }
 
-        Factors = AddSameWords(words).Factors;
+        Factors = Factors.OrderByDescending(word => word.XExp).ToList();
+
+        return this;
     }
 
-    public int GetPolynomialDegree() {
-        return Factors.Max(word => word.XExp);
+    /// <summary>
+    /// Used to perform right cycle shifts on GF2 polynomials/vectors.
+    /// Note that GF2 polynomial is not aware of max 'x' power.
+    /// </summary>
+    /// <param name="shifts">count of shifts.</param>
+    /// <param name="maxXPow">x exponent cap.</param>
+    /// <returns>itself</returns>
+    public Gf2Polynomial RightCycleShift(int shifts, int maxXPow) {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxXPow, 1);
+
+        foreach (var word in Factors.Where(word => (word.XExp -= shifts) < 0)) {
+            word.XExp += maxXPow;
+        }
+
+        Factors = Factors.OrderByDescending(word => word.XExp).ToList();
+
+        return this;
+    }
+
+    /// <summary>
+    /// Creates binary string.
+    /// Note that GF2 polynomial is not aware of bit width of GF2 elements.
+    /// </summary>
+    /// <param name="wordSize">this value indicates how many bits is single GF2 word occupying</param>
+    /// <returns>Binary representation of polynomial using string</returns>
+    public string ToBinaryString() {
+        var binaryString = string.Empty;
+        var wordSize = Gf2Math.GaloisField.GfDegree;
+
+        foreach (var t in Factors) {
+            var gfVal = Gf2Math.GaloisField?.GetValueByExponent(t.GfExp) ?? 0;
+            var word = Convert.ToString(gfVal, 2).PadLeft(wordSize, '0');
+            binaryString += word;
+        }
+
+        return binaryString;
     }
 
     public static Gf2Polynomial operator +(in Gf2Polynomial lhs, in Gf2Polynomial rhs) {
@@ -32,68 +110,111 @@ public class Gf2Polynomial {
         return AddSameWords(combinedPoly);
     }
 
+    public static Gf2Polynomial operator +(in Gf2Polynomial lhs, in PolynomialWord rhs) {
+        return lhs + new Gf2Polynomial(rhs);
+    }
+
+    public static Gf2Polynomial operator -(in Gf2Polynomial lhs, in Gf2Polynomial rhs) {
+        return lhs + rhs;
+    }
+
+    public static Gf2Polynomial operator -(in Gf2Polynomial lhs, in PolynomialWord rhs) {
+        return lhs + new Gf2Polynomial(rhs);
+    }
+
     public static Gf2Polynomial operator *(in Gf2Polynomial lhs, in Gf2Polynomial rhs) {
-        var multipliedPoly = new Gf2Polynomial();
+        var multipliedPoly = CreateEmpty;
 
         foreach (var lhsWord in lhs.Factors) {
+            if (lhsWord.GfExp is null) continue;
             foreach (var rhsWord in rhs.Factors) {
+                if (rhsWord.GfExp is null) continue;
                 multipliedPoly.Factors.Add(lhsWord * rhsWord);
             }
         }
-
+        
         return AddSameWords(multipliedPoly);
     }
 
-    public static Gf2Polynomial operator /(Gf2Polynomial lhs, Gf2Polynomial rhs) {
-        if (lhs.GetPolynomialDegree() < rhs.GetPolynomialDegree()) {
-            return new Gf2Polynomial();
+    public static Gf2Polynomial operator *(in Gf2Polynomial lhs, in PolynomialWord rhs) {
+        return lhs * new Gf2Polynomial(rhs);
+    }
+
+    public static Gf2Polynomial operator /(Gf2Polynomial lhs, in Gf2Polynomial rhs) {
+        if (rhs.Factors.All(word => word.GfExp is null)) throw new DivideByZeroException();
+
+        if (lhs.GetPolynomialDegree < rhs.GetPolynomialDegree) {
+            return new();
         }
 
-        var resultPoly = new Gf2Polynomial();
-        var divisor = rhs.Factors.First();
-        PopulateWithZeros(lhs);
-        PopulateWithZeros(rhs);
-
-        var maxIter = lhs.GetPolynomialDegree() - rhs.GetPolynomialDegree();
-        for (var index = 0; index <= maxIter; ++index) {
+        var resultPoly = CreateEmpty;
+        var divisor = rhs.Factors.First(word => word.GfExp is not null);
+        PopulateWithZeros(lhs, Gf2Math.GaloisField.Gf2MaxExponent);
+        PopulateWithZeros(rhs, Gf2Math.GaloisField.Gf2MaxExponent);
+        
+        for (var index = 0; index < lhs.Factors.Count; ++index) {
             var item = lhs.Factors[index] / divisor;
-            lhs += new Gf2Polynomial([item]) * rhs;
+
+            if (item.XExp < 0) break;
+            
+            lhs += new Gf2Polynomial(item) * rhs;
             resultPoly.Factors.Add(item);
         }
 
-        resultPoly.Factors.RemoveAll(word => word.GfExp is null);
-        rhs.Factors.RemoveAll(word => word.GfExp is null);
-        lhs.Factors.RemoveAll(word => word.GfExp is null);
+        PopulateWithZeros(resultPoly, Gf2Math.GaloisField.Gf2MaxExponent);
+
         return resultPoly;
+    }
 
-        void PopulateWithZeros(in Gf2Polynomial poly) {
-            var expList = (from word in poly.Factors select word.XExp).ToList();
-
-            for (var exp = poly.GetPolynomialDegree(); exp >= 0; --exp) {
-                if (expList.Contains(exp)) continue;
-
-                poly.Factors.Add(new PolynomialWord(null, exp));
-            }
-        }
+    public static Gf2Polynomial operator /(Gf2Polynomial lhs, PolynomialWord rhs) {
+        return lhs / new Gf2Polynomial(rhs);
     }
 
     public static Gf2Polynomial operator %(Gf2Polynomial lhs, Gf2Polynomial rhs) {
-        if (lhs.GetPolynomialDegree() < rhs.GetPolynomialDegree()) {
+        if (lhs.GetPolynomialDegree < rhs.GetPolynomialDegree) {
             return lhs;
         }
 
         var quotient = lhs / rhs;
-        var remainder = quotient * rhs + lhs;
+        var remainder = quotient * rhs - lhs;
 
-        remainder.Factors.RemoveAll(word => word.GfExp is null);
+        PopulateWithZeros(remainder, Gf2Math.GaloisField.Gf2MaxExponent);
+        
         return remainder;
     }
 
+    public static Gf2Polynomial operator %(Gf2Polynomial lhs, PolynomialWord rhs) {
+        return lhs % new Gf2Polynomial(rhs);
+    }
+
+    public static Gf2Polynomial FromBinaryString(string binString) {
+        var wordLength = Gf2Math.GaloisField.GfDegree;
+
+        var binStringLenMod = wordLength - binString.Length % wordLength;
+
+        if (binStringLenMod != 0) {
+            binString = binString.PadLeft(binStringLenMod + binString.Length, '0');
+        }
+
+        var poly = CreateEmpty;
+        var wordCount = binString.Length / wordLength;
+        
+        for (var exp = 0; exp < wordCount; ++exp) {
+            var binAlpha = binString.Substring(exp * wordLength, wordLength);
+            var alpha = Gf2Math.GaloisField.GetByValue(Convert.ToInt32(binAlpha, 2));
+            
+            poly.Factors.Add(new(alpha, wordCount - 1 - exp));
+        }
+
+        PopulateWithZeros(poly, Gf2Math.GaloisField.Gf2MaxExponent);
+        return poly;
+    }
+
     private static Gf2Polynomial AddSameWords(in List<PolynomialWord>? poly) {
-        if (poly is null) return new Gf2Polynomial();
+        if (poly is null) return new();
 
         var sortedWordsByXExp = new Dictionary<int, List<PolynomialWord>>();
-        var summedPoly = new Gf2Polynomial();
+        var summedPoly = CreateEmpty;
 
         foreach (var word in poly.Where(word => !sortedWordsByXExp.ContainsKey(word.XExp))) {
             var sameWords = from w in poly
@@ -110,7 +231,7 @@ public class Gf2Polynomial {
             summedPoly.Factors.Add(summedWords);
         }
 
-        summedPoly.Factors = summedPoly.Factors.OrderByDescending(word => word.XExp).ToList();
+        PopulateWithZeros(summedPoly, Gf2Math.GaloisField.Gf2MaxExponent);
 
         return summedPoly;
     }
@@ -119,16 +240,16 @@ public class Gf2Polynomial {
         return AddSameWords(poly.Factors);
     }
 
-    public string ToBinaryString(int wordSize) {
-        var binaryString = string.Empty;
+    private static void PopulateWithZeros(in Gf2Polynomial poly, int maxXPow) {
+        var expList = (from word in poly.Factors select word.XExp).ToList();
 
-        foreach (var t in Factors) {
-            var gfVal = t.GfExp ?? 0;
-            var word = Convert.ToString(gfVal, 2).PadLeft(wordSize, '0');
-            binaryString += word;
+        for (var exp = maxXPow; exp >= 0; --exp) {
+            if (expList.Contains(exp)) continue;
+
+            poly.Factors.Add(new(null, exp));
         }
 
-        return binaryString;
+        poly.Factors = poly.Factors.OrderByDescending(word => word.XExp).ToList();
     }
 
     public override string ToString() {
