@@ -3,7 +3,7 @@
 namespace NiDUC_RS.RS_Coder.RsFormatters;
 
 public class RsStringFormatter : IRsFormatter {
-    private readonly string _binaryData;
+    private string _binaryData;
     private int _cursor;
 
     private int Cursor {
@@ -66,5 +66,14 @@ public class RsStringFormatter : IRsFormatter {
 
     public void ToBinaryFile(string savePath) {
         throw new NotImplementedException();
+    }
+
+    public static RsStringFormatter FromBinaryString(string binString) {
+        var padLeft = binString.Length % 8 != 0;
+        binString = padLeft ? binString.PadLeft(8, '0') : binString;
+        
+        return new(string.Empty) {
+            _binaryData = binString
+        };
     }
 }

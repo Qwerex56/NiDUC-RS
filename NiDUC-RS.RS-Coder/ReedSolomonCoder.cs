@@ -38,37 +38,78 @@ public class ReedSolomonCoder {
         _packetBuilder = new(InformationLength * WordSize);
     }
 
-    public void SendFile(string filePath) {
-        throw new NotImplementedException();
-    }
+    /// <summary>
+    /// Reads file as binary form and splits it to encoded packet
+    /// </summary>
+    /// <param name="filePath">Path to file</param>
+    /// <returns>encoded packet</returns>
+    public List<string> SendFile(string filePath) {
+        var fileFormatter = new RsFileFormatter(filePath);
+        var packets = new List<string>();
 
-    public void SendString(string message) {
+        while (fileFormatter.CanRead()) {
+            var bits = fileFormatter.ReadBits(InformationLength * WordSize);
+            var encodedMessage = EncodeMessage(bits);
+            packets.Add(encodedMessage);
+        }
+
+        return packets;
+    }
+    
+    /// <summary>
+    /// Reads simple message as binary and splits it to packets if needed
+    /// </summary>
+    /// <param name="message">message to send</param>
+    /// <returns>encoded packets</returns>
+    public List<string> SendString(string message) {
         var stringFormatter = new RsStringFormatter(message);
-        var counter = 0;
+        var packets = new List<string>();
 
         while (stringFormatter.CanRead()) {
             var bits = stringFormatter.ReadBits(InformationLength * WordSize);
             var encodedMessage = EncodeMessage(bits);
-            Console.Write($"Packet {counter++}: ");
-            Console.WriteLine(encodedMessage);
+            packets.Add(encodedMessage);
         }
 
-        Console.WriteLine("All packets has been sent");
+        return packets;
     }
 
+    /// <summary>
+    /// Allows sending bits directly, splits message to packets if needed
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    public List<string> SendBits(string message) {
+        var stringFormatter = RsStringFormatter.FromBinaryString(message);
+        var packets = new List<string>();
+
+        while (stringFormatter.CanRead()) {
+            var bits = stringFormatter.ReadBits(InformationLength * WordSize);
+            var encodedMessage = EncodeMessage(bits);
+            packets.Add(encodedMessage);
+        }
+
+        return packets;
+    }
+    
     public string ReceiveFile() {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Decodes and glue all received packets
+    /// </summary>
+    /// <param name="bitStringPacket">encoded pacet</param>
+    /// <returns>Original message string</returns>
     public string ReceiveString(string bitStringPacket) {
         // TODO: i had something on mind but never mind
         return SimplifiedDecodeMessage(bitStringPacket);
     }
 
     private string EncodeMessage(string message) {
-        var polyMessage = StringToPolynomial(message);
+        var polyMessage = Gf2Polynomial.FromBinaryString(message);
 
-        polyMessage *= new Gf2Polynomial([new(0, GenerativePoly.GetPolynomialDegree)]);
+        polyMessage *= new Gf2Polynomial(new PolynomialWord(0, GenerativePoly.GetPolynomialDegree()));
         var remainder = polyMessage % GenerativePoly;
         var codeWord = polyMessage + remainder;
 
@@ -80,24 +121,19 @@ public class ReedSolomonCoder {
     }
 
     private string SimplifiedDecodeMessage(string bitStringMessage) {
-        for (var i = 0; i < InformationLength; ++i) {
-            var polyMessage = StringToPolynomial(bitStringMessage);
-            var syndrome = (polyMessage % GenerativePoly).ToBinaryString();
-            var syndromePop = syndrome.Count(ch => ch == '1');
+        var polyMessage = Gf2Polynomial.FromBinaryString(bitStringMessage);
+        for (var i = 0; i < BlockLength; ++i) {
+            var syndrome = polyMessage % GenerativePoly;
+            var syndromePop = syndrome.Population;
 
             if (syndromePop <= _e3C) {
-                polyMessage += StringToPolynomial(syndrome);
-                bitStringMessage = polyMessage.ToBinaryString();
-
-                var shiftedString = bitStringMessage[..(i * WordSize)];
-                bitStringMessage = bitStringMessage[(i * WordSize)..];
-
-                return bitStringMessage + shiftedString;
+                polyMessage += syndrome;
+                polyMessage.LeftCycleShift(i, BlockLength);
+               
+                return polyMessage.ToBinaryString();
             }
 
-            var last = bitStringMessage[^WordSize..];
-            bitStringMessage = bitStringMessage[..^WordSize];
-            bitStringMessage = bitStringMessage.Insert(0, last);
+            polyMessage.RightCycleShift(1, BlockLength);
         }
 
         throw new("Cannot decode message");
@@ -105,42 +141,6 @@ public class ReedSolomonCoder {
 
     private void SendBadPacketRequest(int packetId) {
         throw new NotImplementedException();
-    }
-
-    [Obsolete($"This will be deleted in near future, use {nameof(Gf2Polynomial.FromBinaryString)} instead.")]
-    private Gf2Polynomial StringToPolynomial(string message) {
-        const int @base = 2;
-
-        while (message.Length % WordSize != 0) {
-            message = "0" + message;
-        }
-
-        var wordCount = message.Length / _gfDegree;
-        var elements = new byte[wordCount];
-
-        for (var id = 1; id <= wordCount; ++id) {
-            string value;
-
-            try {
-                value = message.Substring(message.Length - id * _gfDegree, _gfDegree);
-            } catch (ArgumentOutOfRangeException) {
-                value = message[(id * _gfDegree)..];
-            }
-
-            elements[id - 1] = Convert.ToByte(value, @base);
-        }
-
-        var exponent = 0;
-        var poly = new Gf2Polynomial();
-
-        foreach (var b in elements) {
-            var alpha = Gf2Math.GaloisField?.GetByValue(b);
-            poly += new Gf2Polynomial([new(alpha, exponent)]);
-
-            ++exponent;
-        }
-
-        return poly;
     }
 
     private void GenerateGenPoly() {
