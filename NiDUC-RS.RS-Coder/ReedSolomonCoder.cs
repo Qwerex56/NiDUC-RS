@@ -128,7 +128,7 @@ public class ReedSolomonCoder {
 
             if (syndromePop <= _e3C) {
                 polyMessage += syndrome;
-                polyMessage.LeftCycleShift(i, BlockLength);
+                polyMessage.LeftCycleShift(i + 1, BlockLength);
                
                 return polyMessage.ToBinaryString();
             }
