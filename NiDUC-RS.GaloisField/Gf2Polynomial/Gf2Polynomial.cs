@@ -1,7 +1,7 @@
 ﻿namespace NiDUC_RS.GaloisField.Gf2Polynomial;
 
 public class Gf2Polynomial {
-    private List<PolynomialWord> Factors { get; set; } = [];
+    public List<PolynomialWord> Factors { get; set; } = [];
 
     /// <summary>
     /// Creates empty polynomial.

@@ -20,10 +20,10 @@ public class ReedSolomonCoder {
     private Packet.PacketBuilder _packetBuilder;
 
     private int BlockLength => (int)(Math.Pow(2, _gfDegree) - 1);
-    private int InformationLength => BlockLength - 2 * _e3C;
+    public int InformationLength => BlockLength - 2 * _e3C;
 
     // ReSharper disable once ConvertToAutoPropertyWhenPossible
-    private int WordSize => _gfDegree;
+    public int WordSize => _gfDegree;
 
     public ReedSolomonCoder(byte gfDegree, int e3C) {
         _gfDegree = gfDegree;
@@ -119,7 +119,7 @@ public class ReedSolomonCoder {
         throw new NotImplementedException();
     }
 
-    private string SimplifiedDecodeMessage(string bitStringMessage) {
+    public string SimplifiedDecodeMessage(string bitStringMessage) {
         var polyMessage = Gf2Polynomial.FromBinaryString(bitStringMessage);
         for (var i = 0; i < BlockLength; ++i) {
             var syndrome = polyMessage % GenerativePoly;
