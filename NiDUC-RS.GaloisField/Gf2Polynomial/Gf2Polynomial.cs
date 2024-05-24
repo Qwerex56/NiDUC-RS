@@ -54,6 +54,11 @@ public class Gf2Polynomial {
     /// Mainly used to calculate syndrome weight.
     /// </summary>
     public int Population => Factors.Sum(word => int.PopCount(Gf2Math.GaloisField.GetValueByExponent(word.GfExp)));
+    
+    /// <summary>
+    /// Counts all not null elements of polynomial
+    /// </summary>
+    public int NotNullWordCount => Factors.Count(word => word.GfExp is not null);
 
     /// <summary>
     /// Used to perform left cycle shifts on GF2 polynomials/vectors.
