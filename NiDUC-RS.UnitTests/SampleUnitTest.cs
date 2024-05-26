@@ -16,7 +16,7 @@ public class SampleTests
 
     //e3c = t = zdolnosc korekcyjna
     [Test]
-    public void losowe_bledy()
+    public void SingleError()
     {
         //generować losowe błędy w zakresie od jednego do t błędów ( RS od 1 do t błędnych symboli)
         //wygeneruj wiadomosc, najlepiej wlasna a nie losowa
@@ -28,13 +28,55 @@ public class SampleTests
 
         for (var i = 0; i < 100; ++i)
         {
+            TestRandomPacket(ref corrected, ref uncorrected, 1);
+        }
+        
+        Console.WriteLine($"Corrected msgs: {corrected}");
+        Console.WriteLine($"Uncorrected msgs: {uncorrected}");
+    }
+    
+    [Test]
+    public void DoubleError()
+    {
+        var corrected = 0;
+        var uncorrected = 0;
+
+        for (var i = 0; i < 100; ++i)
+        {
+            TestRandomPacket(ref corrected, ref uncorrected, 2);
+        }
+        
+        Console.WriteLine($"Corrected msgs: {corrected}");
+        Console.WriteLine($"Uncorrected msgs: {uncorrected}");
+    }
+    [Test]
+    public void TripleError()
+    {
+        var corrected = 0;
+        var uncorrected = 0;
+
+        for (var i = 0; i < 100; ++i)
+        {
             TestRandomPacket(ref corrected, ref uncorrected, 3);
         }
         
         Console.WriteLine($"Corrected msgs: {corrected}");
         Console.WriteLine($"Uncorrected msgs: {uncorrected}");
     }
+    [Test]
+    public void QuadrupleError()
+    {
+        var corrected = 0;
+        var uncorrected = 0;
 
+        for (var i = 0; i < 100; ++i)
+        {
+            TestRandomPacket(ref corrected, ref uncorrected, 4);
+        }
+        
+        Console.WriteLine($"Corrected msgs: {corrected}");
+        Console.WriteLine($"Uncorrected msgs: {uncorrected}");
+    }
     private void TestRandomPacket(ref int correctedMsgs, ref int uncorrectedMsgs, int errors)
     {
         var message = RandomMessage();
@@ -68,15 +110,23 @@ public class SampleTests
     private string WprowadzanieBledu(string message, int errors = 1)
     {
         var poly = Gf2Polynomial.FromBinaryString(message);
-        for (var i = 0; i < errors; ++i)
+        var errorPositions = new List<int>();
+        
+        for (var i = 0; i < errors;)
         {
-            // TODO: Check if position was generated before
             var randomPosition = Random.Shared.Next(koder.InformationLength);
+            if (errorPositions.Contains(randomPosition))
+            {
+                continue;
+            }
+            
+            errorPositions.Add(randomPosition);
             var gfExp = Random.Shared.Next(Gf2Math.GaloisField.Gf2MaxExponent);
             poly.Factors[randomPosition] = poly.Factors[randomPosition] with
             {
                 GfExp = gfExp
             };
+            ++i;
         }
 
         return poly.ToBinaryString();
