@@ -102,7 +102,6 @@ public class ReedSolomonCoder {
     /// <param name="bitStringPacket">encoded pacet</param>
     /// <returns>Original message string</returns>
     public string ReceiveString(string bitStringPacket) {
-        // TODO: i had something on mind but never mind
         return SimplifiedDecodeMessage(bitStringPacket);
     }
 
@@ -124,11 +123,11 @@ public class ReedSolomonCoder {
         var polyMessage = Gf2Polynomial.FromBinaryString(bitStringMessage);
         for (var i = 0; i < BlockLength; ++i) {
             var syndrome = polyMessage % GenerativePoly;
-            var syndromePop = syndrome.Population;
+            var syndromePop = syndrome.NotNullWordCount;
 
             if (syndromePop <= _e3C) {
                 polyMessage += syndrome;
-                polyMessage.LeftCycleShift(i, BlockLength);
+                polyMessage.LeftCycleShift(i + 1, BlockLength);
                
                 return polyMessage.ToBinaryString();
             }
