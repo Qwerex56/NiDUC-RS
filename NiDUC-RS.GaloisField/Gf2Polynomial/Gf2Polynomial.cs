@@ -2,7 +2,7 @@
 
 public class Gf2Polynomial {
     private List<PolynomialWord> Factors { get; set; } = [];
-
+    
     /// <summary>
     /// Creates empty polynomial.
     /// Use with math operations for place-holding values.
@@ -36,6 +36,11 @@ public class Gf2Polynomial {
         PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
     }
 
+    public Gf2Polynomial(Gf2Math element) {
+        Factors.Add(new(element.Exponent, 0));
+        PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
+    }
+
     /// <summary>
     /// Finds polynomial degree with non-zero factor.
     /// </summary>
@@ -59,6 +64,9 @@ public class Gf2Polynomial {
     /// Counts all not null elements of polynomial
     /// </summary>
     public int NotNullWordCount => Factors.Count(word => word.GfExp is not null);
+
+    public int PolyLength => Factors.Count;
+    public Gf2Math this[int i] => new Gf2Math(Factors[i].GfExp);
 
     /// <summary>
     /// Used to perform left cycle shifts on GF2 polynomials/vectors.
@@ -94,6 +102,30 @@ public class Gf2Polynomial {
         }
 
         Factors = Factors.OrderByDescending(word => word.XExp).ToList();
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Evaluates polynomial for given x
+    /// </summary>
+    /// <param name="x">element from Galois Field</param>
+    /// <returns>Value for x</returns>
+    public Gf2Math EvalGf2Polynomial(Gf2Math x) {
+        var eval = new Gf2Math();
+
+        foreach (var factor in Factors) {
+            var eWord = new Gf2Math(factor.GfExp) * x.Pow(factor.XExp);
+            eval += eWord;
+        }
+
+        return eval;
+    }
+
+    public Gf2Polynomial ReverseExponents() {
+        foreach (var word in Factors) {
+            word.GfExp = Gf2Math.GaloisField.Gf2MaxExponent + 1 - word.GfExp;
+        }
 
         return this;
     }

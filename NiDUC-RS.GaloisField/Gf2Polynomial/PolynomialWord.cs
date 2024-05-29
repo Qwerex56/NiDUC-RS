@@ -2,6 +2,7 @@
 
 public record PolynomialWord(int? GfExp, int XExp) {
     public int XExp { get; set; } = XExp;
+    public int? GfExp { get; set; } = GfExp;
 
     public static PolynomialWord operator +(PolynomialWord lhs, PolynomialWord rhs) {
         if (lhs.XExp != rhs.XExp) throw new ArgumentException("Different exponents");
