@@ -2,7 +2,7 @@
 
 namespace NiDUC_RS.GaloisField;
 
-public class Gf2Math(int? exponent) {
+public class Gf2Math(int? exponent = null) {
     public static Gf2LookUpTable SetGf2 {
         set => GaloisField = value;
     }
@@ -18,7 +18,7 @@ public class Gf2Math(int? exponent) {
         }
 
         if (exp1.Exponent == exp2.Exponent) {
-            return new Gf2Math(null);
+            return new();
         }
 
         var elementA = GaloisField.GetValueByExponent(exp1.Exponent);
@@ -60,11 +60,13 @@ public class Gf2Math(int? exponent) {
             throw new DivideByZeroException();
         }
 
-        if (lhs.Exponent < rhs.Exponent) {
-            return lhs;
+        if (!(lhs.Exponent < rhs.Exponent)) {
+            return lhs * new Gf2Math(-rhs.Exponent);
         }
 
-        return lhs * new Gf2Math(-rhs.Exponent);
+        var x = rhs.Exponent - lhs.Exponent;
+        return new(GaloisField.Gf2MaxExponent + 1 - x);
+
     }
 
     public static Gf2Math operator %(Gf2Math lhs, Gf2Math rhs) {
@@ -76,5 +78,16 @@ public class Gf2Math(int? exponent) {
         var modulo = lhs - quot * rhs;
 
         return modulo;
+    }
+
+    public override string ToString() => Exponent is null? "0" : $"a^{Exponent}";
+}
+
+public static class Gf2MathExtensions {
+    public static Gf2Math Pow(this Gf2Math word, int power) {
+        var exponent = word.Exponent * power;
+        exponent %= Gf2Math.GaloisField.Gf2MaxExponent + 1;
+        
+        return new(exponent);
     }
 }

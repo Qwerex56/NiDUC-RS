@@ -24,7 +24,6 @@
 
     <ItemGroup>
       <Folder Include="GF2PolyUnitTests\" />
-      <Folder Include="GF2UnitTests\" />
       <Folder Include="RsCoderUnitTests\" />
     </ItemGroup>
 
