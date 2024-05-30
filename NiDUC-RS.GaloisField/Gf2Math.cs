@@ -60,11 +60,13 @@ public class Gf2Math(int? exponent = null) {
             throw new DivideByZeroException();
         }
 
-        if (lhs.Exponent < rhs.Exponent) {
-            return lhs;
+        if (!(lhs.Exponent < rhs.Exponent)) {
+            return lhs * new Gf2Math(-rhs.Exponent);
         }
 
-        return lhs * new Gf2Math(-rhs.Exponent);
+        var x = rhs.Exponent - lhs.Exponent;
+        return new(GaloisField.Gf2MaxExponent + 1 - x);
+
     }
 
     public static Gf2Math operator %(Gf2Math lhs, Gf2Math rhs) {

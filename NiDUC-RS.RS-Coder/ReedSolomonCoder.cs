@@ -115,7 +115,7 @@ public class ReedSolomonCoder {
         return codeWord.ToBinaryString();
     }
 
-    private string DecodeMessage(string bitStringMessage) {
+    public string DecodeMessage(string bitStringMessage) {
         var poly = Gf2Polynomial.FromBinaryString(bitStringMessage);
         var syndromeVec = CalculateSyndromeVector(poly);
 
@@ -127,10 +127,27 @@ public class ReedSolomonCoder {
         var errLocPoly = FindErrorLocator(syndromeVec);
         var errCount = errLocPoly.GetPolynomialDegree();
         var errPositions = BruteForceErrorsVals(ref errLocPoly, errCount);
+        var syndromePoly = CreateSyndromePolynomial(syndromeVec);
 
-        
+        var errEvaluator = FindErrorEvaluator(ref errLocPoly, ref syndromePoly);
+        var errLocDerivative = errLocPoly.FormalDerivative();
 
-        throw new NotImplementedException();
+        var errorPoly = new Gf2Polynomial();
+
+        for (var i = 0; i < errCount; ++i) {
+            var locator = new Gf2Math(errPositions[i]);
+
+            var revLocator = new Gf2Math(Gf2Math.GaloisField.Gf2MaxExponent + 1 - locator.Exponent);
+
+            var error = locator * errEvaluator.EvalGf2Polynomial(revLocator) /
+                        errLocDerivative.EvalGf2Polynomial(revLocator);
+
+            errorPoly += new PolynomialWord(error.Exponent, revLocator.Exponent ?? 0);
+        }
+
+        var correctedMsg = poly + errorPoly;
+
+        return correctedMsg.ToBinaryString();
     }
 
     private string SimplifiedDecodeMessage(string bitStringMessage) {
@@ -170,11 +187,10 @@ public class ReedSolomonCoder {
             genPoly *= partPoly;
         }
 
-        GenerativePoly = genPoly;
+        GenerativePoly = genPoly; 
     }
 
-    // TODO: Change to private
-    public List<Gf2Math> CalculateSyndromeVector(in Gf2Polynomial poly) {
+    private List<Gf2Math> CalculateSyndromeVector(in Gf2Polynomial poly) {
         var syndromeVector = new List<Gf2Math>();
 
         for (var i = 1; i <= 2 * _e3C; ++i) {
@@ -185,8 +201,7 @@ public class ReedSolomonCoder {
         return syndromeVector;
     }
 
-    // TODO: change to private
-    public Gf2Polynomial FindErrorLocator(in List<Gf2Math> syndromeVec) {
+    private Gf2Polynomial FindErrorLocator(in List<Gf2Math> syndromeVec) {
         var length = 0; // 0
         var lambda = new Gf2Polynomial(new PolynomialWord(0, 0)); // 1
 
@@ -221,11 +236,11 @@ public class ReedSolomonCoder {
         return lambda;
     }
 
-    public List<Gf2Math> ChienSearch(in Gf2Polynomial errLocator) {
+    private List<Gf2Math> ChienSearch(in Gf2Polynomial errLocator) {
         throw new NotImplementedException();
     }
 
-    public List<int> BruteForceErrorsVals(ref Gf2Polynomial errLocator, int stopAfter) {
+    private static List<int> BruteForceErrorsVals(ref Gf2Polynomial errLocator, int stopAfter) {
         var errLocatorRoots = new List<int>();
 
         for (var i = 0; i <= Gf2Math.GaloisField.Gf2MaxExponent; ++i) {
@@ -239,7 +254,20 @@ public class ReedSolomonCoder {
         return errLocatorRoots;
     }
 
-    public Gf2Polynomial ErrorEvaluator(ref Gf2Polynomial errLocator, ref Gf2Polynomial syndromPolynomial) {
-        throw new NotImplementedException();
+    private Gf2Polynomial CreateSyndromePolynomial(in List<Gf2Math> syndromeVec) {
+        var poly = new Gf2Polynomial();
+
+        for (var exp = 0; exp < 2 * _e3C; ++exp) {
+            poly += new PolynomialWord(syndromeVec[exp].Exponent, exp + 1);
+            // poly += new PolynomialWord(syndromeVec[exp].Exponent, 2 * _e3C - exp);
+        }
+
+        return poly;
+    }
+
+    private Gf2Polynomial FindErrorEvaluator(ref Gf2Polynomial errLocator, ref Gf2Polynomial syndromePolynomial) {
+        var x2TPlus1 = new Gf2Polynomial(new PolynomialWord(0, 2 * _e3C + 1));
+
+        return (errLocator * syndromePolynomial) % x2TPlus1;
     }
 }

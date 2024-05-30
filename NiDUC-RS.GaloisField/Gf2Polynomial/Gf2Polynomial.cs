@@ -2,7 +2,7 @@
 
 public class Gf2Polynomial {
     private List<PolynomialWord> Factors { get; set; } = [];
-    
+
     /// <summary>
     /// Creates empty polynomial.
     /// Use with math operations for place-holding values.
@@ -59,7 +59,7 @@ public class Gf2Polynomial {
     /// Mainly used to calculate syndrome weight.
     /// </summary>
     public int Population => Factors.Sum(word => int.PopCount(Gf2Math.GaloisField.GetValueByExponent(word.GfExp)));
-    
+
     /// <summary>
     /// Counts all not null elements of polynomial
     /// </summary>
@@ -105,7 +105,7 @@ public class Gf2Polynomial {
 
         return this;
     }
-    
+
     /// <summary>
     /// Evaluates polynomial for given x
     /// </summary>
@@ -122,6 +122,32 @@ public class Gf2Polynomial {
         return eval;
     }
 
+    public Gf2Polynomial FormalDerivative() {
+        var derivative = new Gf2Polynomial();
+
+        // Book formula
+        // derivative = Factors.Where(w => w.GfExp is not null)
+        //                     .Select(word => word with { XExp = word.XExp - 1 })
+        //                     .Aggregate(derivative,
+        //                         (current, derivativeWord) => current + derivativeWord);
+        //
+        // derivative.Factors = derivative.Factors
+        //                                .Where(w => w.XExp >= 0)
+        //                                .Select(w => w).ToList();
+
+        // Wiki formula
+        foreach (var word in Factors) {
+            if (word.GfExp is null) continue;
+            if (word.XExp == 0) continue;
+            
+            var derivativeWord = new Gf2Math(word.XExp - 1) * new Gf2Math(word.GfExp);
+
+            derivative += new PolynomialWord(derivativeWord.Exponent, word.XExp - 1);
+        }
+        
+        return derivative;
+    }
+
     public Gf2Polynomial ReverseExponents() {
         foreach (var word in Factors) {
             word.GfExp = Gf2Math.GaloisField.Gf2MaxExponent + 1 - word.GfExp;
@@ -134,7 +160,6 @@ public class Gf2Polynomial {
     /// Creates binary string.
     /// Note that GF2 polynomial is not aware of bit width of GF2 elements.
     /// </summary>
-    /// <param name="wordSize">this value indicates how many bits is single GF2 word occupying</param>
     /// <returns>Binary representation of polynomial using string</returns>
     public string ToBinaryString() {
         var binaryString = string.Empty;
