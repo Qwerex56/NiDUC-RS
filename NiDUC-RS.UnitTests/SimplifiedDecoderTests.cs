@@ -5,10 +5,12 @@ using NiDUC_RS.RS_Coder;
 
 namespace NiDUC_RS.UnitTests;
 
-public class SampleTests
+public class SimplifiedDecoderTests
 {
-    private ReedSolomonCoder koder = new ReedSolomonCoder(6, 4);
+    private ReedSolomonCoder _koder = new ReedSolomonCoder(6, 4);
 
+    private readonly int _testCount = 1000;
+    
     [SetUp]
     public void Setup()
     {
@@ -26,7 +28,7 @@ public class SampleTests
         var corrected = 0;
         var uncorrected = 0;
 
-        for (var i = 0; i < 100; ++i)
+        for (var i = 0; i < _testCount; ++i)
         {
             TestRandomPacket(ref corrected, ref uncorrected, 1);
         }
@@ -41,7 +43,7 @@ public class SampleTests
         var corrected = 0;
         var uncorrected = 0;
 
-        for (var i = 0; i < 100; ++i)
+        for (var i = 0; i < _testCount; ++i)
         {
             TestRandomPacket(ref corrected, ref uncorrected, 2);
         }
@@ -55,7 +57,7 @@ public class SampleTests
         var corrected = 0;
         var uncorrected = 0;
 
-        for (var i = 0; i < 100; ++i)
+        for (var i = 0; i < _testCount; ++i)
         {
             TestRandomPacket(ref corrected, ref uncorrected, 3);
         }
@@ -69,7 +71,7 @@ public class SampleTests
         var corrected = 0;
         var uncorrected = 0;
 
-        for (var i = 0; i < 100; ++i)
+        for (var i = 0; i < _testCount; ++i)
         {
             TestRandomPacket(ref corrected, ref uncorrected, 4);
         }
@@ -79,13 +81,13 @@ public class SampleTests
     }
     private void TestRandomPacket(ref int correctedMsgs, ref int uncorrectedMsgs, int errors)
     {
-        var message = RandomMessage();
-        var packet = koder.SendBits(message)[0];
-        var packetWithErrors = WprowadzanieBledu(packet, errors);
+        var message = MessageRandomizer.RandomMessage(_koder);
+        var packet = _koder.SendBits(message)[0];
+        var packetWithErrors = MessageRandomizer.InsertRandomError(packet, errors, _koder);
 
         try
         {
-            var decodedBits = koder.SimplifiedDecodeMessage(packetWithErrors);
+            var decodedBits = _koder.SimplifiedDecodeMessage(packetWithErrors);
             correctedMsgs++;
         }
         catch (Exception)
@@ -94,41 +96,5 @@ public class SampleTests
             uncorrectedMsgs++;
         }
     }
-
-    private string RandomMessage()
-    {
-        var message = new StringBuilder();
-        for (var i = 0; i < koder.InformationLength * koder.WordSize; ++i)
-        {
-            var bit = Random.Shared.Next(2);
-            message.Append(bit);
-        }
-
-        return message.ToString();
-    }
-
-    private string WprowadzanieBledu(string message, int errors = 1)
-    {
-        var poly = Gf2Polynomial.FromBinaryString(message);
-        var errorPositions = new List<int>();
-        
-        for (var i = 0; i < errors;)
-        {
-            var randomPosition = Random.Shared.Next(koder.InformationLength);
-            if (errorPositions.Contains(randomPosition))
-            {
-                continue;
-            }
-            
-            errorPositions.Add(randomPosition);
-            var gfExp = Random.Shared.Next(Gf2Math.GaloisField.Gf2MaxExponent);
-            poly.Factors[randomPosition] = poly.Factors[randomPosition] with
-            {
-                GfExp = gfExp
-            };
-            ++i;
-        }
-
-        return poly.ToBinaryString();
-    }
+    
 }
