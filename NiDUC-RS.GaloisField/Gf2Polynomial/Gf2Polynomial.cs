@@ -36,6 +36,11 @@ public class Gf2Polynomial {
         PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
     }
 
+    public Gf2Polynomial(Gf2Math element) {
+        Factors.Add(new(element.Exponent, 0));
+        PopulateWithZeros(this, Gf2Math.GaloisField.Gf2MaxExponent);
+    }
+
     /// <summary>
     /// Finds polynomial degree with non-zero factor.
     /// </summary>
@@ -54,11 +59,14 @@ public class Gf2Polynomial {
     /// Mainly used to calculate syndrome weight.
     /// </summary>
     public int Population => Factors.Sum(word => int.PopCount(Gf2Math.GaloisField.GetValueByExponent(word.GfExp)));
-    
+
     /// <summary>
     /// Counts all not null elements of polynomial
     /// </summary>
     public int NotNullWordCount => Factors.Count(word => word.GfExp is not null);
+
+    public int PolyLength => Factors.Count;
+    public Gf2Math this[int i] => new Gf2Math(Factors[i].GfExp);
 
     /// <summary>
     /// Used to perform left cycle shifts on GF2 polynomials/vectors.
@@ -99,10 +107,59 @@ public class Gf2Polynomial {
     }
 
     /// <summary>
+    /// Evaluates polynomial for given x
+    /// </summary>
+    /// <param name="x">element from Galois Field</param>
+    /// <returns>Value for x</returns>
+    public Gf2Math EvalGf2Polynomial(Gf2Math x) {
+        var eval = new Gf2Math();
+
+        foreach (var factor in Factors) {
+            var eWord = new Gf2Math(factor.GfExp) * x.Pow(factor.XExp);
+            eval += eWord;
+        }
+
+        return eval;
+    }
+
+    public Gf2Polynomial FormalDerivative() {
+        var derivative = new Gf2Polynomial();
+
+        // Book formula
+        // derivative = Factors.Where(w => w.GfExp is not null)
+        //                     .Select(word => word with { XExp = word.XExp - 1 })
+        //                     .Aggregate(derivative,
+        //                         (current, derivativeWord) => current + derivativeWord);
+        //
+        // derivative.Factors = derivative.Factors
+        //                                .Where(w => w.XExp >= 0)
+        //                                .Select(w => w).ToList();
+
+        // Wiki formula
+        foreach (var word in Factors) {
+            if (word.GfExp is null) continue;
+            if (word.XExp == 0) continue;
+            
+            var derivativeWord = new Gf2Math(word.XExp - 1) * new Gf2Math(word.GfExp);
+
+            derivative += new PolynomialWord(derivativeWord.Exponent, word.XExp - 1);
+        }
+        
+        return derivative;
+    }
+
+    public Gf2Polynomial ReverseExponents() {
+        foreach (var word in Factors) {
+            word.GfExp = Gf2Math.GaloisField.Gf2MaxExponent + 1 - word.GfExp;
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Creates binary string.
     /// Note that GF2 polynomial is not aware of bit width of GF2 elements.
     /// </summary>
-    /// <param name="wordSize">this value indicates how many bits is single GF2 word occupying</param>
     /// <returns>Binary representation of polynomial using string</returns>
     public string ToBinaryString() {
         var binaryString = string.Empty;
