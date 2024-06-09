@@ -126,6 +126,11 @@ public class ReedSolomonCoder {
 
         var errLocPoly = FindErrorLocator(syndromeVec);
         var errCount = errLocPoly.GetPolynomialDegree();
+
+        if (errCount > _e3C) {
+            throw new($"Cannot decode message, error count in message {errCount}");
+        }
+
         var errPositions = BruteForceErrorsVals(ref errLocPoly, errCount);
         var syndromePoly = CreateSyndromePolynomial(syndromeVec);
 
@@ -187,7 +192,7 @@ public class ReedSolomonCoder {
             genPoly *= partPoly;
         }
 
-        GenerativePoly = genPoly; 
+        GenerativePoly = genPoly;
     }
 
     private List<Gf2Math> CalculateSyndromeVector(in Gf2Polynomial poly) {
@@ -247,8 +252,6 @@ public class ReedSolomonCoder {
             if (errLocator.EvalGf2Polynomial(new(i)).ToString() != new Gf2Math().ToString()) continue;
 
             errLocatorRoots.Add(i);
-
-            if (errLocatorRoots.Count == stopAfter) break;
         }
 
         return errLocatorRoots;
