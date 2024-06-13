@@ -134,6 +134,11 @@ public class ReedSolomonCoder {
         var errPositions = BruteForceErrorsVals(ref errLocPoly, errCount);
         var syndromePoly = CreateSyndromePolynomial(syndromeVec);
 
+        if (errPositions.Count != errCount) {
+            throw new($"Cannot decode message, error count differ from error position count. Error count: {errCount}," +
+                      $" error position count {errPositions.Count}");
+        }
+        
         var errEvaluator = FindErrorEvaluator(ref errLocPoly, ref syndromePoly);
         var errLocDerivative = errLocPoly.FormalDerivative();
 
@@ -143,11 +148,13 @@ public class ReedSolomonCoder {
             var locator = new Gf2Math(errPositions[i]);
 
             var revLocator = new Gf2Math(Gf2Math.GaloisField.Gf2MaxExponent + 1 - locator.Exponent);
+            var omegaEval = errEvaluator.EvalGf2Polynomial(revLocator);
+            var derivativeValue = errLocDerivative.EvalGf2Polynomial(revLocator);
 
-            var error = locator * errEvaluator.EvalGf2Polynomial(revLocator) /
-                        errLocDerivative.EvalGf2Polynomial(revLocator);
+            // Error here?
+            var error = locator * omegaEval / derivativeValue;
 
-            errorPoly += new PolynomialWord(error.Exponent, revLocator.Exponent ?? 0);
+            errorPoly += new PolynomialWord(error.Exponent, locator.Exponent ?? 0);
         }
 
         var correctedMsg = poly + errorPoly;
@@ -198,7 +205,7 @@ public class ReedSolomonCoder {
     private List<Gf2Math> CalculateSyndromeVector(in Gf2Polynomial poly) {
         var syndromeVector = new List<Gf2Math>();
 
-        for (var i = 1; i <= 2 * _e3C; ++i) {
+        for (var i = 0; i < 2 * _e3C; ++i) {
             var polyEval = poly.EvalGf2Polynomial(new(i));
             syndromeVector.Add(polyEval);
         }
@@ -206,43 +213,41 @@ public class ReedSolomonCoder {
         return syndromeVector;
     }
 
-    private Gf2Polynomial FindErrorLocator(in List<Gf2Math> syndromeVec) {
+    public Gf2Polynomial FindErrorLocator(in List<Gf2Math> syndromeVec) {
         var length = 0; // 0
         var lambda = new Gf2Polynomial(new PolynomialWord(0, 0)); // 1
 
-        var auxPoly = new Gf2Polynomial(new PolynomialWord(0, 0)); // 1
+        var auxPoly = new Gf2Polynomial(new PolynomialWord(0, 1)); // 1
 
         for (var r = 1; r <= 2 * _e3C; ++r) {
             var delta = new Gf2Math(); // 0
 
-            for (var j = 0; j <= length; ++j) {
+            for (var j = 1; j <= length; ++j) {
                 var syn = syndromeVec[r - 1 - j];
                 var lambdaJ = lambda[lambda.PolyLength - j - 1];
                 delta += lambdaJ * syn;
             }
 
-            if (delta.Exponent is null) break;
-
+            delta += syndromeVec[r - 1];
+            
             var prevLambda = lambda;
             var deltaAsPoly = new Gf2Polynomial(delta);
 
-            lambda -= deltaAsPoly * auxPoly * new PolynomialWord(0, 1);
-
-            if (2 * length <= r - 1) {
-                length = r - length;
-                auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
-            } else {
-                // length = length;
-                auxPoly *= new PolynomialWord(0, 1);
+            if (delta.Exponent is not null) {
+                lambda += deltaAsPoly * auxPoly;
             }
 
+            if (2 * length < r) {
+                length = r - length;
+                
+                auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
+                // auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
+            }
+
+            auxPoly *= new PolynomialWord(0, 1);
         }
 
         return lambda;
-    }
-
-    private List<Gf2Math> ChienSearch(in Gf2Polynomial errLocator) {
-        throw new NotImplementedException();
     }
 
     private static List<int> BruteForceErrorsVals(ref Gf2Polynomial errLocator, int stopAfter) {
@@ -251,7 +256,7 @@ public class ReedSolomonCoder {
         for (var i = 0; i <= Gf2Math.GaloisField.Gf2MaxExponent; ++i) {
             if (errLocator.EvalGf2Polynomial(new(i)).ToString() != new Gf2Math().ToString()) continue;
 
-            errLocatorRoots.Add(i);
+            errLocatorRoots.Add(Gf2Math.GaloisField.Gf2MaxExponent + 1 - i);
         }
 
         return errLocatorRoots;
@@ -261,16 +266,15 @@ public class ReedSolomonCoder {
         var poly = new Gf2Polynomial();
 
         for (var exp = 0; exp < 2 * _e3C; ++exp) {
-            poly += new PolynomialWord(syndromeVec[exp].Exponent, exp + 1);
-            // poly += new PolynomialWord(syndromeVec[exp].Exponent, 2 * _e3C - exp);
+            poly += new PolynomialWord(syndromeVec[exp].Exponent, exp);
         }
 
         return poly;
     }
 
     private Gf2Polynomial FindErrorEvaluator(ref Gf2Polynomial errLocator, ref Gf2Polynomial syndromePolynomial) {
-        var x2TPlus1 = new Gf2Polynomial(new PolynomialWord(0, 2 * _e3C + 1));
+        var x2T = new Gf2Polynomial(new PolynomialWord(0, 2 * _e3C));
 
-        return (errLocator * syndromePolynomial) % x2TPlus1;
+        return (errLocator * syndromePolynomial) % x2T;
     }
 }

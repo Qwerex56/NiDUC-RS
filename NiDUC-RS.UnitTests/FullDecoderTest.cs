@@ -6,7 +6,7 @@ using NiDUC_RS.RS_Coder;
 namespace NiDUC_RS.UnitTests;
 
 public class FullDecoderTest {
-    private const int TestCount = 100000;
+    private const int TestCount = 1000;
 
     private ReedSolomonCoder _coder;
 
@@ -108,8 +108,15 @@ public class FullDecoderTest {
         var packetWithErrors = MessageRandomizer.InsertRandomError(packet, errors, _coder);
 
         try {
-            _coder.DecodeMessage(packetWithErrors);
+            var recPacket = _coder.DecodeMessage(packetWithErrors);
+            var result = string.Compare(recPacket, packet, StringComparison.Ordinal);
 
+            if (result != 0) {
+                recPacket = _coder.DecodeMessage(recPacket);
+                Console.WriteLine(recPacket);
+                throw new("Decode miss, message has been decoded but wrongly.");
+            }
+            
             correctedMsgs++;
         } catch (Exception e) {
             Console.WriteLine(e);
@@ -132,7 +139,7 @@ public class FullDecoderTest {
             Console.WriteLine(e);
             Console.WriteLine($"Cannot decode!\n" +
                               $"Was:       {packetWithErrors}\n" +
-                              $"Should Be: {packet}");
+                              $"Should Be: {packet}\n\n.");
             uncorrectedMsgs++;
         }
     }

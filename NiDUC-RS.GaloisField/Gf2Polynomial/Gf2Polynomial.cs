@@ -114,7 +114,7 @@ public class Gf2Polynomial {
     public Gf2Math EvalGf2Polynomial(Gf2Math x) {
         var eval = new Gf2Math();
 
-        foreach (var factor in Factors) {
+        foreach (var factor in Factors.Where(w => w.GfExp is not null)) {
             var eWord = new Gf2Math(factor.GfExp) * x.Pow(factor.XExp);
             eval += eWord;
         }
@@ -125,24 +125,14 @@ public class Gf2Polynomial {
     public Gf2Polynomial FormalDerivative() {
         var derivative = new Gf2Polynomial();
 
-        // Book formula
-        // derivative = Factors.Where(w => w.GfExp is not null)
-        //                     .Select(word => word with { XExp = word.XExp - 1 })
-        //                     .Aggregate(derivative,
-        //                         (current, derivativeWord) => current + derivativeWord);
-        //
-        // derivative.Factors = derivative.Factors
-        //                                .Where(w => w.XExp >= 0)
-        //                                .Select(w => w).ToList();
-
-        // Wiki formula
         foreach (var word in Factors) {
             if (word.GfExp is null) continue;
-            if (word.XExp == 0) continue;
+            // if (word.XExp == 0) continue;
+            if (word.XExp % 2 == 0) continue;
             
-            var derivativeWord = new Gf2Math(word.XExp - 1) * new Gf2Math(word.GfExp);
-
-            derivative += new PolynomialWord(derivativeWord.Exponent, word.XExp - 1);
+            // var derivativeWord = new Gf2Math(word.XExp - 1) * new Gf2Math(word.GfExp);
+            // derivative += new PolynomialWord(derivativeWord.Exponent, word.XExp - 1);
+            derivative += word with { XExp = word.XExp - 1 };
         }
         
         return derivative;
