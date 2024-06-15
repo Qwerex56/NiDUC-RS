@@ -138,7 +138,7 @@ public class ReedSolomonCoder {
             throw new($"Cannot decode message, error count differ from error position count. Error count: {errCount}," +
                       $" error position count {errPositions.Count}");
         }
-        
+
         var errEvaluator = FindErrorEvaluator(ref errLocPoly, ref syndromePoly);
         var errLocDerivative = errLocPoly.FormalDerivative();
 
@@ -151,7 +151,6 @@ public class ReedSolomonCoder {
             var omegaEval = errEvaluator.EvalGf2Polynomial(revLocator);
             var derivativeValue = errLocDerivative.EvalGf2Polynomial(revLocator);
 
-            // Error here?
             var error = locator * omegaEval / derivativeValue;
 
             errorPoly += new PolynomialWord(error.Exponent, locator.Exponent ?? 0);
@@ -189,11 +188,11 @@ public class ReedSolomonCoder {
     private void GenerateGenPoly() {
         var genPoly = new Gf2Polynomial([
             new(0, 1),
-            new(1, 0)
+            new(0, 0)
         ]);
         var x = new PolynomialWord(0, 1);
 
-        for (var exp = 2; exp <= 2 * _e3C; ++exp) {
+        for (var exp = 1; exp < 2 * _e3C; ++exp) {
             var alpha = new PolynomialWord(exp, 0);
             var partPoly = new Gf2Polynomial([x, alpha]);
             genPoly *= partPoly;
@@ -229,19 +228,20 @@ public class ReedSolomonCoder {
             }
 
             delta += syndromeVec[r - 1];
-            
+
             var prevLambda = lambda;
+
             var deltaAsPoly = new Gf2Polynomial(delta);
+
 
             if (delta.Exponent is not null) {
                 lambda += deltaAsPoly * auxPoly;
-            }
 
-            if (2 * length < r) {
-                length = r - length;
-                
-                auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
-                // auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
+                if (2 * length < r) {
+                    length = r - length;
+
+                    auxPoly = prevLambda * deltaAsPoly.ReverseExponents();
+                }
             }
 
             auxPoly *= new PolynomialWord(0, 1);
@@ -254,7 +254,7 @@ public class ReedSolomonCoder {
         var errLocatorRoots = new List<int>();
 
         for (var i = 0; i <= Gf2Math.GaloisField.Gf2MaxExponent; ++i) {
-            if (errLocator.EvalGf2Polynomial(new(i)).ToString() != new Gf2Math().ToString()) continue;
+            if (errLocator.EvalGf2Polynomial(new(i)).Exponent is not null) continue;
 
             errLocatorRoots.Add(Gf2Math.GaloisField.Gf2MaxExponent + 1 - i);
         }

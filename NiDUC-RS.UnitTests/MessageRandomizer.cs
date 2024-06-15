@@ -34,10 +34,7 @@ public static class MessageRandomizer
             
             errorPositions.Add(randomPosition);
             var gfExp = Random.Shared.Next(Gf2Math.GaloisField.Gf2MaxExponent);
-            poly.Factors[randomPosition] = poly.Factors[randomPosition] with
-            {
-                GfExp = gfExp
-            };
+            poly.Factors[randomPosition].GfExp = gfExp;
             ++i;
         }
 
