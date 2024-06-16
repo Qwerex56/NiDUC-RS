@@ -6,7 +6,7 @@ using NiDUC_RS.RS_Coder;
 namespace NiDUC_RS.UnitTests;
 
 public class FullDecoderTest {
-    private const int TestCount = 1000;
+    private const int TestCount = 1_000_000;
 
     private ReedSolomonCoder _coder;
 

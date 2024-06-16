@@ -15,24 +15,36 @@ public class PacketBuilder {
     /// Space occupied by packet information
     /// </summary>
     private readonly int _informationSize;
+
+    /// <summary>
+    /// Tells how many bits are from message, useful in parsing
+    /// </summary>
+    private readonly int _messageBitsInPacket;
     
     /// <summary>
     /// Cache for future packet
     /// </summary>
     private string _overflowCache = string.Empty;
 
-    public PacketBuilder(int packetSize, int packetIdSize = 0) {
+    public int InformationSize => _informationSize;
+
+    public PacketBuilder(int packetSize, int packetIdSize = 0, int messageBitsInPacket = 0) {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(packetSize, nameof(packetSize));
         ArgumentOutOfRangeException.ThrowIfNegative(packetIdSize, nameof(packetIdSize));
 
         if (packetIdSize == 0) {
-            Console.WriteLine($"{nameof(packetIdSize)} is equal to 0, information about packet count will be lost.");
+            Console.WriteLine($"{nameof(packetIdSize)} is 0, information about packet ID will be lost.");
+        }
+
+        if (messageBitsInPacket == 0) {
+            Console.WriteLine($"{nameof(messageBitsInPacket)} is 0, information about valid bits in packet will be lost.");
         }
 
         _packetSize = packetSize;
         _packetIdSize = packetIdSize;
+        _messageBitsInPacket = messageBitsInPacket;
 
-        _informationSize = packetSize - packetIdSize;
+        _informationSize = packetSize - packetIdSize - _messageBitsInPacket;
     }
 
     public string BuildPacket(string packetContent, int packetId = 0) {
@@ -54,32 +66,37 @@ public class PacketBuilder {
 
         var idBits = Convert.ToString(packetId, 2)
                             .PadLeft(_packetIdSize, '0');
-        var packet = idBits + packetContent;
+        var packetBitLength = Convert.ToString(packetContent.Length, 2)
+                                .PadLeft(_messageBitsInPacket, '0');
+        
+        var packet = idBits + packetBitLength + packetContent;
+
+        if (packet.Length >= _packetSize) {
+            return packet;
+        }
+
+        var fillLength = _packetSize - packet.Length;
+        var fillStart = _packetIdSize + _messageBitsInPacket;
+        packet = packet.Insert(fillStart, "0".PadLeft(fillLength, '0'));
 
         return packet;
     }
 
-    public (int packetId, byte[] packetData) ParsePacket(string packet) {
-        var idBits = packet[.._packetIdSize];
-        var data = packet[_packetIdSize..];
+    public string BuildPacketFromCache(int packetId) {
+        return BuildPacket(string.Empty, packetId);
+    }
+
+    public (int packetId, string packetData) ParsePacket(string packet) {
+        var idBits = packet[.._packetIdSize]; // initially 0..8
+        var bitLength = packet[_packetIdSize..(_messageBitsInPacket + _packetIdSize)]; // 8..24
 
         var packetId = Convert.ToInt32(idBits, 2);
-        var dataSize = (int)MathF.Ceiling(data.Length / 8F);
+        var packetBitLength = Convert.ToInt32(bitLength, 2);
 
-        var dataBytes = new byte[dataSize];
-        
-        for (var i = 0; i < dataSize; ++i) {
-            byte b;
-            try {
-                b = Convert.ToByte(data.Substring(i * 8, 8), 2);
-
-            } catch (ArgumentOutOfRangeException) {
-                b = Convert.ToByte(data[(i * 8)..], 2);
-            }
-
-            dataBytes[i] = b;
-        }
+        var dataBytes = packet[^packetBitLength..];
 
         return (packetId, dataBytes);
     }
+
+    public bool HasCache() => _overflowCache.Length != 0;
 }

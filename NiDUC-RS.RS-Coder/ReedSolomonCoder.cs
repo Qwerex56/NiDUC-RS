@@ -35,7 +35,7 @@ public class ReedSolomonCoder {
         Gf2Math.SetGf2 = new(_gfDegree, primePoly);
         GenerateGenPoly();
 
-        _packetBuilder = new(InformationLength * WordSize);
+        _packetBuilder = new(InformationLength * WordSize, 16, 16);
     }
 
     /// <summary>
@@ -48,9 +48,18 @@ public class ReedSolomonCoder {
         var packets = new List<string>();
 
         while (fileFormatter.CanRead()) {
-            var bits = fileFormatter.ReadBits(InformationLength * WordSize);
-            var encodedMessage = EncodeMessage(bits);
+            var bits = fileFormatter.ReadBits(_packetBuilder.InformationSize);
+            var packet = _packetBuilder.BuildPacket(bits, packets.Count);
+            
+            var encodedMessage = EncodeMessage(packet);
             packets.Add(encodedMessage);
+        }
+
+        if (_packetBuilder.HasCache()) {
+            var packet = _packetBuilder.BuildPacketFromCache(packets.Count);
+            var encodedPacket = EncodeMessage(packet);
+            
+            packets.Add(encodedPacket);
         }
 
         return packets;
@@ -64,11 +73,20 @@ public class ReedSolomonCoder {
     public List<string> SendString(string message) {
         var stringFormatter = new RsStringFormatter(message);
         var packets = new List<string>();
-
+        
         while (stringFormatter.CanRead()) {
             var bits = stringFormatter.ReadBits(InformationLength * WordSize);
-            var encodedMessage = EncodeMessage(bits);
+            var packet = _packetBuilder.BuildPacket(bits, packets.Count);
+            
+            var encodedMessage = EncodeMessage(packet);
             packets.Add(encodedMessage);
+        }
+
+        if (_packetBuilder.HasCache()) {
+            var packet = _packetBuilder.BuildPacketFromCache(packets.Count);
+            var encodedPacket = EncodeMessage(packet);
+            
+            packets.Add(encodedPacket);
         }
 
         return packets;
@@ -92,17 +110,50 @@ public class ReedSolomonCoder {
         return packets;
     }
 
-    public string ReceiveFile() {
-        throw new NotImplementedException();
+    public string ReceiveFile(string[] bitStringPacket) {
+        var decodedMessage = string.Empty;
+
+        foreach (var packet in bitStringPacket) {
+            var decodedPacket = DecodeMessage(packet)[..^48];
+
+            var receivedBits = _packetBuilder.ParsePacket(decodedPacket).packetData;
+
+            decodedMessage += receivedBits;
+        }
+
+        var fileFormatter = RsFileFormatter.FromBinaryString(decodedMessage);
+        var message = fileFormatter.ParseToString();
+
+        var file = new FileStream("./parsed.png", FileMode.Create);
+
+        for (var i = 0; i < message.Length; ++i) {
+            var b = decodedMessage[(i * 8)..(i * 8 + 8)];
+            file.WriteByte(Convert.ToByte(b, 2));
+        }
+        
+        return message;
     }
 
     /// <summary>
     /// Decodes and glue all received packets
     /// </summary>
-    /// <param name="bitStringPacket">encoded pacet</param>
+    /// <param name="bitStringPacket">encoded packet</param>
     /// <returns>Original message string</returns>
-    public string ReceiveString(string bitStringPacket) {
-        return SimplifiedDecodeMessage(bitStringPacket);
+    public string ReceiveString(string[] bitStringPacket) {
+        var decodedMessage = string.Empty;
+        
+        foreach (var packet in bitStringPacket) {
+            var decodedPacket = DecodeMessage(packet)[..^48];
+
+            var receivedBits = _packetBuilder.ParsePacket(decodedPacket).packetData;
+
+            decodedMessage += receivedBits;
+        }
+
+        var stringFormatter = RsStringFormatter.FromBinaryString(decodedMessage);
+        var message = stringFormatter.ParseToString();
+        
+        return message;
     }
 
     private string EncodeMessage(string message) {
@@ -126,10 +177,6 @@ public class ReedSolomonCoder {
 
         var errLocPoly = FindErrorLocator(syndromeVec);
         var errCount = errLocPoly.GetPolynomialDegree();
-
-        if (errCount > _e3C) {
-            throw new($"Cannot decode message, error count in message {errCount}");
-        }
 
         var errPositions = BruteForceErrorsVals(ref errLocPoly, errCount);
         var syndromePoly = CreateSyndromePolynomial(syndromeVec);
