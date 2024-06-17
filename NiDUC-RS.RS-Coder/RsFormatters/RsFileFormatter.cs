@@ -3,8 +3,8 @@
 namespace NiDUC_RS.RS_Coder.RsFormatters;
 
 public class RsFileFormatter : IRsFormatter {
-    private readonly string _filePath;
-    private readonly string _binaryData;
+    private readonly string? _filePath;
+    private string _binaryData;
     private int _cursor;
 
     private int Cursor {
@@ -23,10 +23,13 @@ public class RsFileFormatter : IRsFormatter {
         _binaryData = IRsFormatter.ParseToBinaryString(buff);
     }
 
+    public RsFileFormatter() {
+        
+    }
+
     public bool CanRead() => _cursor < _binaryData.Length;
 
     public string ReadBits(int count) {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(_cursor, _binaryData.Length);
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
         var afterReadPos = Cursor + count;
@@ -60,19 +63,41 @@ public class RsFileFormatter : IRsFormatter {
     }
 
     public string ParseToString() {
-        const int byteWidth = 8;
-        
-        var buffLength = (int)MathF.Ceiling(_binaryData.Length / 8F);
-        var buff = new byte[buffLength];
+        var padLeft = _binaryData.Length % 8 != 0;
+        _binaryData = padLeft ? _binaryData.PadLeft(_binaryData.Length + _binaryData.Length % 8, '0') : 
+                          _binaryData;
 
-        for (var i = 0; i < buffLength; ++i) {
-            buff[i] = Convert.ToByte(ReadBitsAt(i * byteWidth, byteWidth));
+        var binStringLength = _binaryData.Length / 8;
+        var message = string.Empty;
+        var bytes = new byte[binStringLength];
+        
+        for (var i = 0; i < binStringLength; ++i) {
+            var bits = Convert.ToByte(_binaryData[(i * 8)..(i * 8 + 8)], 2);
+            bytes[i] = bits;
         }
 
-        return Encoding.ASCII.GetString(buff);
+        message += Encoding.ASCII.GetString(bytes);
+
+        return message;
     }
 
     public void ToBinaryFile(string savePath) {
         throw new NotImplementedException();
+    }
+    
+    public static RsFileFormatter FromBinaryString(string binString) {
+        var padLeft = binString.Length % 8 != 0;
+        binString = padLeft ? binString.PadLeft(8, '0') : binString;
+
+        if (padLeft) {
+            var padLength = binString.Length + binString.Length % 8;
+            binString = binString.PadLeft(padLength, '0');
+        }
+
+        var formatter = new RsFileFormatter {
+            _binaryData = binString
+        };
+
+        return formatter;
     }
 }

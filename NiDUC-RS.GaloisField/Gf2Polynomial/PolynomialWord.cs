@@ -25,4 +25,8 @@ public record PolynomialWord(int? GfExp, int XExp) {
         return new PolynomialWord((new Gf2Math(lhs.GfExp) / new Gf2Math(rhs.GfExp)).Exponent,
                                   lhs.XExp - rhs.XExp);
     }
+
+    public override string ToString() {
+        return Gf2Math.GaloisField.GetValueByExponent(GfExp).ToString();
+    }
 }

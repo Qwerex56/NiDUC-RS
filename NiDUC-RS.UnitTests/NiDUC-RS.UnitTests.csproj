@@ -24,7 +24,12 @@
 
     <ItemGroup>
       <Folder Include="GF2PolyUnitTests\" />
+      <Folder Include="GF2UnitTests\" />
       <Folder Include="RsCoderUnitTests\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\NiDUC-RS.RS-Coder\NiDUC-RS.RS-Coder.csproj" />
     </ItemGroup>
 
 </Project>
